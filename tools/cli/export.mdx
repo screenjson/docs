@@ -1,0 +1,60 @@
+---
+title: export
+description: Export a ScreenJSON document to a screenplay format.
+---
+
+```
+screenjson export -i <input.json> -f <format> [-o <output-file>] [options]
+```
+
+Exports a ScreenJSON document to **FDX**, **FadeIn**, **Fountain**, **PDF**, **JSON**, or **YAML**.
+
+## Flags
+
+### Core
+
+| Flag | Default | Description |
+|---|---|---|
+| `-i` · `--input <path>` | — | ScreenJSON input file. **Required.** |
+| `-o` · `--output <path>` | stdout | Output file (or stdout if omitted / `-`). |
+| `-f` · `--format <name>` | — | **Required.** Output format: `fdx` · `fadein` · `fountain` · `pdf` · `json` · `yaml`. |
+| `--decrypt <key>` | — | Decrypt encrypted content runs before exporting. |
+| `--lang <tag>` | `en` | Primary language to pick from each text map. |
+| `-q` · `--quiet` | `false` | Suppress non-error output. |
+| `--verbose` | `false` | Verbose logging to stderr. |
+
+### PDF export
+
+| Flag | Default | Description |
+|---|---|---|
+| `--pdf-paper <size>` | `letter` | Paper size: `letter` · `a4`. |
+| `--pdf-font <font>` | `courier` | Font: `courier` · `courier-prime`. |
+| `--gotenberg <url>` | — | [Gotenberg](https://gotenberg.dev/) URL for HTML→PDF rendering. Optional; falls back to the native PDF encoder. |
+
+## Examples
+
+```bash
+# FDX export
+screenjson export -i script.json -f fdx -o script.fdx
+
+# Fountain
+screenjson export -i script.json -f fountain -o script.fountain
+
+# PDF with A4 paper
+screenjson export -i script.json -f pdf --pdf-paper a4 -o script.pdf
+
+# Decrypt and export
+screenjson export -i cipher.json -f fdx --decrypt "SharedSecret123" -o script.fdx
+
+# Pick French as the primary language
+screenjson export -i multilang.json -f fdx --lang fr -o script-fr.fdx
+
+# External Gotenberg renderer
+screenjson export -i script.json -f pdf --gotenberg http://gotenberg:3000 -o script.pdf
+```
+
+## Behaviour
+
+- Output is written to stdout if `-o` is omitted or set to `-`.
+- The binary accepts ScreenJSON in either JSON or YAML; it detects by attempting JSON parse first.
+- `--lang` controls which key is pulled from each text map at export time. Missing keys fall through to the document's root `lang`.

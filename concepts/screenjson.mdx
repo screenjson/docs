@@ -1,0 +1,48 @@
+---
+title: The ScreenJSON format
+description: A one-page orientation to the shape of a ScreenJSON document.
+---
+
+A ScreenJSON file is a JSON document with a stable top-level shape. The authoritative machine-readable definition is the [JSON Schema](https://screenjson.com/schema.json) at `https://screenjson.com/schema.json`.
+
+## Top-level shape
+
+```json
+{
+  "id":       "<uuid>",
+  "version":  "1.0.0",
+  "title":    { "en": "The Heist" },
+  "lang":     "en",
+  "charset":  "utf-8",
+  "dir":      "ltr",
+  "authors":  [ /* one or more */ ],
+  "document": { "cover": { ... }, "scenes": [ ... ] }
+}
+```
+
+## Required root properties
+
+| Property | Type | Description |
+|---|---|---|
+| `id` | uuid | RFC 4122 document identifier. |
+| `version` | semver string | ScreenJSON schema version the document was authored against. |
+| `title` | language map | Title keyed by BCP 47 language tag. |
+| `lang` | BCP 47 | Primary language. |
+| `charset` | string | IANA character set label. Default `utf-8`. |
+| `dir` | `ltr` \| `rtl` | Text direction. |
+| `authors` | array | One or more author entries. |
+| `document` | object | The screenplay container — cover, scenes, optional layout and bookmarks. |
+
+## Optional root properties
+
+`generator`, `locale`, `contributors`, `characters`, `colors`, `sources`, `registrations`, `revisions`, `encrypt`, `license`, `taggable`, `genre`, `themes`, `logline`, `analysis`.
+
+See [specification/document-root](/specification/document-root) for the complete description.
+
+## Commitments
+
+- **Structural, not presentational.** Slug, action, cue, parenthetical, dialogue, shot, transition are typed nodes — not layout hints. Rendering lives in the optional `layout` block.
+- **Language as first-class.** Every user-facing text field is a BCP 47 keyed map.
+- **Stable identity.** Every referenceable node carries a UUID.
+- **Extensible without ambiguity.** Extension data lives only in `meta`; core fields are `additionalProperties: false`.
+- **Analysis is additive.** Embeddings, passages, summaries live under `analysis` and are discardable.

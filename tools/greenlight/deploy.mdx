@@ -1,0 +1,80 @@
+---
+title: Deploy
+description: Deploy Greenlight with Docker Compose, standalone, or on Kubernetes.
+---
+
+## Prerequisites
+
+- Docker (for the compose path) or Go 1.22+ and Node 20+ (for source builds).
+- Redis instance reachable by every worker.
+- S3-compatible object store (AWS S3, MinIO, or `noop` for stateless runs).
+- The `screenjson` binary — either baked into the Greenlight image (the default Dockerfile copies it in) or mounted from `SCREENJSON_BIN`.
+
+## Docker Compose (fastest)
+
+```bash
+git clone https://github.com/screenjson/greenlight.git
+cd greenlight
+cp env.example backend/.env
+docker build -f deployment/Dockerfile -t screenjson/greenlight:latest .
+cd deployment
+docker-compose up
+```
+
+The provided `docker-compose.yml` boots:
+
+- Greenlight on `:19000` (maps internal `:8080`)
+- Redis
+- MinIO on `:9000` (S3 API) and `:9001` (console)
+
+Drop files into the MinIO `greenlight/screenplays/input/` prefix — the worker picks them up.
+
+## Standalone backend
+
+```bash
+cd backend
+cp ../env.example .env   # or backend/.env
+go run cmd/greenlight/main.go
+```
+
+Watches `backend/.env`, `config/tasks.yml`, and any environment variables set before startup.
+
+## Frontend dev server
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Runs on port `5173` (Vite default). The production Svelte build lives at `backend/greenlight/` (the `UI_DIST_DIR`) and is served by the Go binary in one process.
+
+## Kubernetes
+
+Greenlight scales horizontally. Each replica pulls from the shared Redis queue. Recommended pattern:
+
+```
+Deployment: greenlight (replicas: 3-8)
+  env:
+    - QUEUE_BACKEND=redis
+    - REDIS_ADDR=redis.default.svc:6379
+    - STORAGE_BACKEND=s3
+    - S3_INPUT_BUCKET=...
+    - S3_OUTPUT_BUCKET=...
+  command: ["/app/greenlight"]
+
+StatefulSet: redis
+Service: greenlight  (ClusterIP on 8080)
+Ingress: docs.example.com → greenlight
+```
+
+Sizing: each worker runs one conversion at a time. `MAX_WORKERS=4` per replica is a sensible starting point (matches the default). Scale replicas horizontally.
+
+## Health endpoints
+
+| Path | Purpose |
+|---|---|
+| `GET /up` | Liveness — returns 200 as long as the HTTP server is up. |
+| `GET /setup` | Configuration snapshot. |
+| `GET /workers` | Per-worker live status. |
+| `GET /tail` | Recent log lines. |

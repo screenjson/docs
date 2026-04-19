@@ -1,0 +1,66 @@
+---
+title: Environment variables
+description: Every environment variable screenjson-cli reads.
+---
+
+Every CLI flag has a corresponding environment variable. Flags take precedence when both are set.
+
+## General
+
+| Variable | Default | Description |
+|---|---|---|
+| `SCREENJSON_ENCRYPT_KEY` | — | Default encryption / decryption key. Used by `encrypt`, `decrypt`, `convert --encrypt`, `export --decrypt`. |
+| `SCREENJSON_PDFTOHTML` | `/opt/homebrew/bin/pdftohtml` | Path to Poppler's `pdftohtml` binary. |
+| `SCREENJSON_PDF_PAPER` | `letter` | Default paper size for PDF export: `letter` · `a4`. |
+| `SCREENJSON_PDF_FONT` | `courier` | Default font for PDF export: `courier` · `courier-prime`. |
+
+## Server
+
+Used by `screenjson serve`.
+
+| Variable | Default | Description |
+|---|---|---|
+| `SCREENJSON_SERVER_HOST` | `0.0.0.0` | Listen host. |
+| `SCREENJSON_SERVER_PORT` | `8080` | Listen port. |
+| `SCREENJSON_SERVER_WORKERS` | CPU cores | Worker pool size. |
+
+## External services
+
+| Variable | Default | Description |
+|---|---|---|
+| `SCREENJSON_GOTENBERG_URL` | — | Gotenberg URL for HTML→PDF rendering. |
+| `SCREENJSON_TIKA_URL` | — | Apache Tika URL for content extraction. |
+| `SCREENJSON_LLM_URL` | — | OpenAI-compatible LLM endpoint. |
+| `SCREENJSON_LLM_APIKEY` | — | LLM API key. |
+| `SCREENJSON_LLM_MODEL` | — | Model identifier. |
+
+## Database
+
+Used by `convert --db ...`.
+
+| Variable | Description |
+|---|---|
+| `SCREENJSON_DB_TYPE` | `elasticsearch` · `mongodb` · `cassandra` · `dynamodb` · `redis`. |
+| `SCREENJSON_DB_HOST` | Host. |
+| `SCREENJSON_DB_PORT` | Port. |
+| `SCREENJSON_DB_USER` | Username. |
+| `SCREENJSON_DB_PASS` | Password. |
+| `SCREENJSON_DB_COLLECTION` | Collection or index name. |
+| `SCREENJSON_DB_AUTH_TYPE` | `basic` · `apikey` · `token`. |
+| `SCREENJSON_DB_APIKEY` | API key (when `auth_type = apikey`). |
+| `SCREENJSON_DB_INDEX` | Elasticsearch index name. |
+| `SCREENJSON_DB_REGION` | DynamoDB region. |
+
+## Blob storage
+
+Used by `convert --blob ...`.
+
+| Variable | Description |
+|---|---|
+| `SCREENJSON_BLOB_TYPE` | `s3` · `azure` · `minio`. |
+| `SCREENJSON_BLOB_BUCKET` | Bucket name. |
+| `SCREENJSON_BLOB_KEY` | Object key / path. |
+| `SCREENJSON_BLOB_REGION` | AWS region. |
+| `SCREENJSON_BLOB_ENDPOINT` | Custom endpoint (MinIO). |
+| `SCREENJSON_AWS_ACCESS_KEY` | AWS access key ID. |
+| `SCREENJSON_AWS_SECRET_KEY` | AWS secret access key. |

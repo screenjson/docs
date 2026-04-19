@@ -1,97 +1,43 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: ScreenJSON Documentation
+sidebarTitle: Introduction
+description: Reference documentation for the ScreenJSON toolchain — schema, CLI tools, viewer, and Greenlight batch microservice.
 ---
 
-## Setting up
+ScreenJSON is an open schema for screenplay data and a set of tools that produce, consume, render, and manage it.
 
-Get your documentation site up and running in minutes.
+These docs are **reference**, grounded in what each tool actually does. Every flag, environment variable, task, and endpoint below matches the released source. For narrative articles, audience guides, and how-tos, see [screenjson.com](https://screenjson.com).
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+## Tools
 
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="screenjson-export" icon="file-arrow-down" href="/tools/export/overview">
+    Free, open-source CLI. FDX / Fountain / FadeIn → ScreenJSON. MIT-licensed.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="screenjson-cli" icon="terminal" href="/tools/cli/overview">
+    The full CLI. All formats in and out, validation, encryption, REST API.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="screenjson-ui" icon="window-maximize" href="/tools/ui/overview">
+    Embeddable JavaScript viewer. CDN or npm, plain HTML, React, Svelte.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Greenlight" icon="server" href="/tools/greenlight/overview">
+    Batch microservice. Job queue, S3 ingestion, pipeline tasks, webhooks.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## API Reference
 
-Everything you need to create world-class documentation.
+<CardGroup cols={2}>
+  <Card title="screenjson-cli server" icon="plug" href="/api-reference/cli/introduction">
+    REST endpoints exposed by `screenjson serve`.
+  </Card>
+  <Card title="Greenlight service" icon="plug" href="/api-reference/greenlight/introduction">
+    Job submission, results, workers, storage, tasks.
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Specification
 
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
+<Card title="ScreenJSON schema" icon="file-lines" href="/specification/overview">
+  The authoritative reference for the document model, shared types, element types, layout, and analysis.
 </Card>

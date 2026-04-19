@@ -1,0 +1,135 @@
+---
+title: Elements
+description: Typed scene-body elements.
+---
+
+Every scene body is an ordered array of typed elements. Each element extends a common base and narrows with its own `type` field.
+
+## Common element base
+
+Every element carries these fields:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | uuid | ✓ | Element identifier. |
+| `authors` | uuid[] | ✓ | At least one author. |
+| `scene` | uuid | — | Back-reference to the parent scene. |
+| `contributors` | uuid[] | — | Contributors to this element. |
+| `access` | [roles](/specification/shared-types) | — | RBAC roles that may read this element. |
+| `notes` | [note](/specification/revisions-notes#notes)[] | — | Anchored annotations. |
+| `charset` | string | — | Override root charset. |
+| `dir` | enum | — | Override direction (`ltr` / `rtl`). |
+| `class` | slug | — | Custom class for renderer styling. |
+| `dom` | string (≤100) | — | Optional DOM hint for renderers. |
+| `encrypt` | [encrypt](/specification/encryption) | — | Per-element encryption override. |
+| `locked` | boolean | `false` | Renderer should not allow edits. |
+| `omit` | boolean | `false` | Marked for scheduled deletion. |
+| `revisions` | [revision](/specification/revisions-notes#revisions)[] | — | Element-scoped revision markers. |
+| `styles` | slug[] unique | — | Style ids to apply. |
+| `meta` | meta | — | Extension. |
+
+## `action`
+
+Narrative description.
+
+```json
+{ "type": "action", "text": { "en": "MARA lifts the lid." } }
+```
+
+| Field | Required |
+|---|---|
+| `type` | ✓ — `"action"` |
+| `text` | ✓ — language map |
+
+## `character` (cue)
+
+Character cue — the line above dialogue.
+
+```json
+{
+  "type":      "character",
+  "character": "<uuid>",
+  "display":   "MARA (CONT'D)"
+}
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `type` | ✓ — `"character"` | |
+| `character` | ✓ | UUID from the character index. |
+| `display` | — | Override the rendered cue string (e.g. `MARA (V.O.)`). Length 1–120. |
+
+## `parenthetical`
+
+Bracketed actor direction.
+
+```json
+{ "type": "parenthetical", "text": { "en": "(whispering)" } }
+```
+
+| Field | Required |
+|---|---|
+| `type` | ✓ — `"parenthetical"` |
+| `text` | ✓ — language map |
+
+## `dialogue`
+
+A spoken line.
+
+```json
+{
+  "type":      "dialogue",
+  "character": "<uuid>",
+  "origin":    "V.O.",
+  "dual":      false,
+  "text":      { "en": "We have ninety seconds." }
+}
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `type` | ✓ — `"dialogue"` | |
+| `character` | ✓ | UUID from the character index. |
+| `text` | ✓ | Language map. |
+| `origin` | — | `V.O`, `V.O.`, `O.S`, `O.S.`, `O.C`, `O.C.`, `FILTER`. |
+| `dual` | — | Dual-dialogue marker. Default `false`. |
+
+## `shot`
+
+Camera direction.
+
+```json
+{
+  "type":        "shot",
+  "text":        { "en": "CLOSE ON MARA'S HANDS" },
+  "fov":         40,
+  "perspective": "2D"
+}
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `type` | ✓ — `"shot"` | |
+| `text` | ✓ | Language map. |
+| `fov` | — | Field-of-view in degrees. 0–360. Default `40`. |
+| `perspective` | — | `2D` or `3D`. Default `2D`. |
+
+## `transition`
+
+Scene transitions — `CUT TO:`, `FADE TO BLACK.`, `SMASH CUT TO:`.
+
+```json
+{ "type": "transition", "text": { "en": "CUT TO:" } }
+```
+
+## `general`
+
+A typed catch-all for scene-body text that does not fit the other element kinds.
+
+```json
+{ "type": "general", "text": { "en": "— END OF ACT ONE —" } }
+```
+
+## Element order
+
+The `body` array preserves source order. Renderers use that order; there is no implicit sort.

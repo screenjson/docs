@@ -1,0 +1,104 @@
+---
+title: Layout
+description: Optional rendering hints under document.layout.
+---
+
+`document.layout` is an optional block that tells renderers how to present the document. Everything here is **informational** — viewers may honour, partially honour, or ignore it.
+
+## Shape
+
+```json
+{
+  "document": {
+    "layout": {
+      "header":    { /* ribbon */ },
+      "footer":    { /* ribbon */ },
+      "status":    { /* status */ },
+      "styles":    [ /* style */ ],
+      "templates": [ /* template */ ],
+      "guides":    [ /* format */ ],
+      "meta":      {}
+    }
+  }
+}
+```
+
+## `ribbon`
+
+Repeating header / footer content.
+
+```json
+{
+  "cover": false,
+  "show":  true,
+  "start": 2,
+  "omit":  [],
+  "text":  { "en": "DRAFT — CONFIDENTIAL" }
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `cover` | boolean | ✓ | Show on the cover page. |
+| `show` | boolean | ✓ | Visibility toggle. |
+| `text` | [text](/specification/shared-types#text) | ✓ | Ribbon text. |
+| `start` | integer ≥0 | — | First page the ribbon appears on. Default `0`. |
+| `omit` | integer[] unique | — | Pages to skip. |
+| `meta` | meta | — | Extension. |
+
+## `status`
+
+Industry revision status.
+
+```json
+{
+  "color":   "blue",
+  "round":   2,
+  "updated": "2026-01-14T10:12:00Z"
+}
+```
+
+| Field | Type | Required | Values |
+|---|---|---|---|
+| `color` | enum | ✓ | `white`, `blue`, `pink`, `yellow`, `green`, `goldenrod`, `buff`, `salmon`, `cherry`. |
+| `round` | integer ≥1 | ✓ | Revision round. Default `1`. |
+| `updated` | datetime | ✓ | ISO 8601. |
+
+## `style`
+
+A reusable presentation-style fragment.
+
+```json
+{ "id": "big-quote", "default": false, "text": "font-size: 18pt; font-weight: 700;" }
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | slug | ✓ | Referenced by `element.styles[]`. |
+| `default` | boolean | ✓ | Whether renderers should apply automatically. |
+| `text` | string (0–5000) | ✓ | Renderer-specific style payload. |
+| `meta` | meta | — | Extension. |
+
+## `template`
+
+A longer reusable fragment, size-limited separately.
+
+| Field | Type | Required |
+|---|---|---|
+| `id` | slug | ✓ |
+| `default` | boolean | ✓ |
+| `text` | string (0–20,000) | ✓ |
+| `meta` | meta | — |
+
+## `guides`
+
+References to external presentation standards.
+
+```json
+{
+  "id":    "wb-final-draft",
+  "title": "Warner Bros / Final Draft convention",
+  "url":   "https://screenjson.com/tools/screenjson-ui/#formatting-standards",
+  "note":  "US Letter, Courier Prime 12pt, 60 lines/page."
+}
+```

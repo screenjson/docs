@@ -1,0 +1,48 @@
+---
+title: UUIDs and identity
+description: Every node that can be referenced from elsewhere carries an RFC 4122 UUID.
+---
+
+Every node in a ScreenJSON document that can be referenced from elsewhere carries an [RFC 4122](https://www.rfc-editor.org/rfc/rfc4122) UUID.
+
+## Format
+
+```
+^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
+```
+
+Example: `7a1c0b4e-8f3a-4c68-9d2e-ac8f21a0d8a4`.
+
+## Nodes with UUIDs
+
+| Node | Where |
+|---|---|
+| Document | root `id` |
+| Author | `authors[].id` |
+| Contributor | `contributors[].id` |
+| Character | `characters[].id` |
+| Scene | `document.scenes[].id` |
+| Element | `document.scenes[].body[].id` |
+| Note | `notes[].id` |
+| Revision | `revisions[].id` |
+| Bookmark | `document.bookmarks[].id` |
+| Source | `sources[].id` |
+| Embedding | `analysis.embeddings[<target>][].id` |
+| Passage | `analysis.passages[].id` |
+| Summary | `analysis.summaries[].id` |
+
+## Cross-references
+
+- `dialogue.character` and `character` (cue).character point to `characters[].id`.
+- `note.contributor` points to `contributors[].id`.
+- `note.parent` points to the element, scene, or note the annotation is attached to.
+- `bookmark.scene` and `bookmark.element` point to their targets.
+- `passage.scene` and `passage.elements[]` point to the elements a passage covers.
+- `summary.target` points to a scene (when `scope = "scene"`).
+- `element.scene` back-references its parent scene.
+- `revision.parent` points to the revision it was forked from.
+
+## Guarantees
+
+- A given UUID identifies **one** node for the lifetime of the document.
+- Regenerating output across a compatible change SHOULD reuse the same UUIDs, not mint new ones. Both `screenjson convert` and `screenjson-export` honour this when the output file already exists on disk.

@@ -1,0 +1,86 @@
+---
+title: Notifications
+description: Multi-driver notification fan-out — Slack, Teams, Discord, FCM, APNs, SNS, WebPush.
+---
+
+Beyond [webhooks](/tools/greenlight/webhooks), Greenlight can fan job-lifecycle events out to a set of human-facing notification channels. Each driver is optional; enable by setting the relevant environment variables.
+
+## Runtime shape
+
+| Variable | Default | Description |
+|---|---|---|
+| `NOTIFY_QUEUE_SIZE` | `256` | Internal bounded buffer; beyond this, events are dropped with a warning log. |
+| `NOTIFY_TIMEOUT` | `8s` | Per-driver request timeout. |
+| `NOTIFY_MAX_RETRY` | `4` | Retry cap. |
+| `NOTIFY_RETRY_MIN_WAIT` | `1s` | Initial back-off. |
+| `NOTIFY_RETRY_MAX_WAIT` | `30s` | Max back-off. |
+
+## Slack
+
+```bash
+NOTIFY_SLACK_WEBHOOK_URLS=https://hooks.slack.com/services/T000/B000/xxxx,https://hooks.slack.com/services/T111/B111/yyyy
+```
+
+Comma-separated list. Every URL receives every event.
+
+## Microsoft Teams
+
+```bash
+NOTIFY_TEAMS_WEBHOOK_URLS=https://outlook.office.com/webhook/...
+```
+
+## Discord
+
+```bash
+NOTIFY_DISCORD_WEBHOOK_URLS=https://discord.com/api/webhooks/...
+```
+
+## Firebase Cloud Messaging
+
+Mobile push on Android (and iOS if you've set up FCM there).
+
+| Variable | Description |
+|---|---|
+| `NOTIFY_FCM_SERVER_KEY` | FCM legacy server key. |
+| `NOTIFY_FCM_DEVICE_TOKENS` | Comma-separated device tokens. |
+
+## Apple Push Notification service (APNs)
+
+iOS push.
+
+| Variable | Description |
+|---|---|
+| `NOTIFY_APNS_KEY_ID` | APNs key id. |
+| `NOTIFY_APNS_TEAM_ID` | Apple Developer team id. |
+| `NOTIFY_APNS_BUNDLE_ID` | Topic bundle id. |
+| `NOTIFY_APNS_PRIVATE_KEY` | PEM key inline. |
+| `NOTIFY_APNS_PRIVATE_KEY_FILE` | PEM key file path (alternative to inline). |
+| `NOTIFY_APNS_DEVICE_TOKENS` | Comma-separated device tokens. |
+| `NOTIFY_APNS_PRODUCTION` | `true` for the production APNs environment; `false` (default) for sandbox. |
+
+## AWS SNS
+
+Event fan-out to SNS topics.
+
+| Variable | Description |
+|---|---|
+| `NOTIFY_SNS_REGION` | AWS region. |
+| `NOTIFY_SNS_TOPIC_ARNS` | Comma-separated topic ARNs. |
+
+## WebPush
+
+Browser push (Chrome, Firefox, Edge, Safari 16+).
+
+| Variable | Description |
+|---|---|
+| `NOTIFY_WEBPUSH_SUBJECT` | `mailto:...` or URL the subscriber can contact. |
+| `NOTIFY_WEBPUSH_PUBLIC_KEY` | VAPID public key. |
+| `NOTIFY_WEBPUSH_PRIVATE_KEY` | VAPID private key. |
+| `NOTIFY_WEBPUSH_SUBSCRIPTIONS_JSON` | JSON array of push subscription objects (or a path to a file). |
+
+## Delivery semantics
+
+- All drivers are fire-and-forget from the worker's perspective.
+- A dedicated goroutine pool drains the notification queue.
+- Failures retry up to `NOTIFY_MAX_RETRY` times with the configured back-off; then they are logged and dropped.
+- No ordering guarantees across drivers — the same event may reach Slack before Teams, or vice versa.

@@ -1,0 +1,93 @@
+---
+title: Configuration
+description: Every environment variable Greenlight reads, grouped by subsystem.
+---
+
+Greenlight loads configuration from `backend/.env` (via `godotenv`), then overlays any shell environment. Copy `env.example` as a starting point.
+
+## Core
+
+| Variable | Default | Description |
+|---|---|---|
+| `UI_DIST_DIR` | `/app/ui` | Path to the compiled Svelte frontend. |
+| `UI_ENABLED` | `true` | Serve the SPA from the Go binary. |
+| `WORKER_ID` | auto | Overrides the auto-generated worker id. |
+| `MAX_WORKERS` | `4` | Worker pool size. |
+| `JOB_TIMEOUT` | `30m` | Per-job timeout. |
+| `HTTP_PORT` | `8080` | Listen port. |
+
+## Authentication
+
+Enable auth by setting any of these. Unset ⇒ open.
+
+| Variable | Purpose |
+|---|---|
+| `GREENLIGHT_USERNAME` / `GREENLIGHT_PASSWORD` | HTTP basic auth. |
+| `SHARED_API_SECRET` | Enables bearer token auth. |
+| `SHARED_API_KEY` | Expected token value. |
+
+## ScreenJSON binary
+
+| Variable | Default | Description |
+|---|---|---|
+| `SCREENJSON_BIN` | `/usr/local/bin/screenjson` | Path to the `screenjson` CLI binary invoked per task. |
+| `PDFTOHTML_BIN` | `pdftohtml` | Path to Poppler's `pdftohtml` for PDF tasks. |
+
+## Queue
+
+| Variable | Default | Description |
+|---|---|---|
+| `QUEUE_BACKEND` | `redis` | Queue backend. Only `redis` currently supported. |
+| `REDIS_ADDR` | `redis:6379` | Redis server. |
+| `REDIS_PASSWORD` | — | Redis auth. |
+| `REDIS_INPUT_QUEUE` | `greenlight_jobs_waiting` | Redis list for incoming jobs. |
+| `REDIS_RESULTS_QUEUE` | `greenlight_jobs_finished` | Redis list for job results. |
+| `REDIS_RESULTS_TTL` | `2` (hours) | TTL on stored results. |
+
+## Storage
+
+| Variable | Default | Description |
+|---|---|---|
+| `STORAGE_BACKEND` | `minio` | One of `minio`, `s3`, `noop`. |
+| `S3_ENDPOINT` | `http://minio:9000` | S3 API endpoint. |
+| `S3_REGION` | `us-west-2` | Region. |
+| `S3_USE_SSL` | `false` | TLS. |
+| `S3_FORCE_PATH_STYLE` | `true` | Required for MinIO. |
+| `S3_ACCESS_KEY_ID` | `minioadmin` | — |
+| `S3_SECRET_ACCESS_KEY` | `minioadmin` | — |
+| `S3_INPUT_BUCKET` | `greenlight` | Bucket watched for incoming files. |
+| `S3_OUTPUT_BUCKET` | `greenlight` | Bucket for results. |
+| `S3_INPUT_PREFIX` | `screenplays/input` | Prefix filter. |
+| `S3_OUTPUT_PREFIX` | `screenplays/output` | Output prefix. |
+
+## Webhooks
+
+| Variable | Default | Description |
+|---|---|---|
+| `DEFAULT_WEBHOOKS` | — | Comma-separated webhook names applied to every job. |
+| `DEFAULT_WEBHOOK_URLS` | — | Comma-separated URLs applied to every job. |
+| `WEBHOOK_TIMEOUT` | `15s` | Outbound request timeout. |
+| `WEBHOOK_MAX_RETRY` | `4` | Retry cap. |
+| `WEBHOOK_RETRY_MIN_WAIT` | `1s` | Initial back-off. |
+| `WEBHOOK_RETRY_MAX_WAIT` | `30s` | Back-off cap. |
+| `WEBHOOK_SECRET` | `secret` | HMAC signing secret. |
+
+## Notifications (optional multi-driver)
+
+| Variable | Purpose |
+|---|---|
+| `NOTIFY_QUEUE_SIZE` | Internal queue. Default `256`. |
+| `NOTIFY_TIMEOUT` | Per-driver timeout. Default `8s`. |
+| `NOTIFY_MAX_RETRY` | Retry cap. Default `4`. |
+| `NOTIFY_RETRY_MIN_WAIT` / `NOTIFY_RETRY_MAX_WAIT` | Back-off range. |
+| `NOTIFY_SLACK_WEBHOOK_URLS` | Slack webhook URLs (comma-separated). |
+| `NOTIFY_TEAMS_WEBHOOK_URLS` | Microsoft Teams. |
+| `NOTIFY_DISCORD_WEBHOOK_URLS` | Discord. |
+| `NOTIFY_FCM_SERVER_KEY` / `NOTIFY_FCM_DEVICE_TOKENS` | Firebase Cloud Messaging. |
+| `NOTIFY_APNS_*` | Apple Push Notification service — key id, team id, bundle id, private key / key file, device tokens, production toggle. |
+| `NOTIFY_SNS_REGION` / `NOTIFY_SNS_TOPIC_ARNS` | AWS SNS. |
+| `NOTIFY_WEBPUSH_*` | WebPush — subject, VAPID public / private keys, subscription JSON. |
+
+## Configuration dump
+
+Every deployment logs a `CONFIG DUMP` banner on startup containing the resolved values (secrets are logged as their presence, not content). Check the first 200 lines of the container log after boot.

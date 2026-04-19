@@ -1,0 +1,95 @@
+---
+title: Storage integrations
+description: Database and blob storage drivers available on convert.
+---
+
+`screenjson convert` can write its output to a database or object store in the same invocation that produces the ScreenJSON document.
+
+## Databases
+
+### Selectable via `--db`
+
+| Type | Notes |
+|---|---|
+| `mongodb` | Document store. Uses the ScreenJSON `id` as `_id`. |
+| `elasticsearch` | Indexed per `--db-collection`. |
+| `cassandra` | Table per `--db-collection`. |
+| `dynamodb` | Region from `--blob-region` or `SCREENJSON_BLOB_REGION`. Item-size limit applies. |
+| `redis` | Key-value store. Document stored as a serialised string. |
+
+### Shared flags
+
+| Flag | Environment | Description |
+|---|---|---|
+| `--db <type>` | `SCREENJSON_DB_TYPE` | Backend selector. |
+| `--db-host <host>` | `SCREENJSON_DB_HOST` | Host / connection string. |
+| `--db-port <port>` | `SCREENJSON_DB_PORT` | Port. |
+| `--db-user <user>` | `SCREENJSON_DB_USER` | Username. |
+| `--db-pass <pass>` | `SCREENJSON_DB_PASS` | Password. |
+| `--db-collection <name>` | `SCREENJSON_DB_COLLECTION` | Collection / index / table. |
+| — | `SCREENJSON_DB_AUTH_TYPE` | `basic` · `apikey` · `token`. |
+| — | `SCREENJSON_DB_APIKEY` | API key. |
+| — | `SCREENJSON_DB_INDEX` | Elasticsearch index name. |
+| — | `SCREENJSON_DB_REGION` | DynamoDB region. |
+
+### Example
+
+```bash
+screenjson convert -i script.fdx \
+  --db mongodb \
+  --db-host mongodb://localhost:27017 \
+  --db-collection screenplays
+```
+
+## Blob storage
+
+### Selectable via `--blob`
+
+| Type | Notes |
+|---|---|
+| `s3` | AWS Simple Storage Service. |
+| `azure` | Azure Blob Storage. |
+| `minio` | Self-hosted, S3-compatible. Requires `--blob-endpoint`. |
+
+### Shared flags
+
+| Flag | Environment | Description |
+|---|---|---|
+| `--blob <type>` | `SCREENJSON_BLOB_TYPE` | Backend selector. |
+| `--blob-bucket <name>` | `SCREENJSON_BLOB_BUCKET` | Bucket name. |
+| `--blob-key <path>` | `SCREENJSON_BLOB_KEY` | Object key. Defaults to `<document-id>.<json\|yaml>`. |
+| `--blob-region <region>` | `SCREENJSON_BLOB_REGION` | AWS region. |
+| `--blob-endpoint <url>` | `SCREENJSON_BLOB_ENDPOINT` | Custom endpoint (MinIO, localstack). |
+| — | `SCREENJSON_AWS_ACCESS_KEY` | AWS access key ID. |
+| — | `SCREENJSON_AWS_SECRET_KEY` | AWS secret access key. |
+
+### Examples
+
+```bash
+# S3 bucket
+screenjson convert -i script.fdx \
+  --blob s3 \
+  --blob-bucket my-bucket \
+  --blob-region us-west-2
+
+# MinIO
+screenjson convert -i script.fdx \
+  --blob minio \
+  --blob-bucket screenplays \
+  --blob-endpoint http://minio:9000
+
+# Azure
+screenjson convert -i script.fdx \
+  --blob azure \
+  --blob-bucket screenplays
+```
+
+## Combining outputs
+
+`convert` can emit to a file, a database, **and** a blob in the same invocation. All three run after conversion succeeds:
+
+```bash
+screenjson convert -i script.fdx -o script.json \
+  --db mongodb --db-host mongodb://... --db-collection screenplays \
+  --blob s3 --blob-bucket archive --blob-region us-west-2
+```

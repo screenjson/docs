@@ -1,11 +1,12 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "ScreenJSON",
+  "description": "Reference documentation for the ScreenJSON toolchain — schema, CLI tools, viewer, and Greenlight batch microservice.",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#6a1ef0",
+    "light":   "#a97dff",
+    "dark":    "#43109b"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -18,52 +19,127 @@
             "pages": [
               "index",
               "quickstart",
-              "development"
+              "install"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "concepts/screenjson",
+              "concepts/language-maps",
+              "concepts/uuids",
+              "concepts/analysis",
+              "concepts/encryption"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Tools",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "screenjson-export",
             "pages": [
-              "api-reference/introduction"
+              "tools/export/overview",
+              "tools/export/install",
+              "tools/export/usage"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "screenjson-cli",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "tools/cli/overview",
+              "tools/cli/install",
+              "tools/cli/convert",
+              "tools/cli/export",
+              "tools/cli/validate",
+              "tools/cli/encrypt",
+              "tools/cli/decrypt",
+              "tools/cli/serve",
+              "tools/cli/formats",
+              "tools/cli/environment",
+              "tools/cli/docker",
+              "tools/cli/storage"
             ]
+          },
+          {
+            "group": "screenjson-ui",
+            "pages": [
+              "tools/ui/overview",
+              "tools/ui/install",
+              "tools/ui/javascript",
+              "tools/ui/data-attributes",
+              "tools/ui/svelte",
+              "tools/ui/options",
+              "tools/ui/encrypted"
+            ]
+          },
+          {
+            "group": "Greenlight",
+            "pages": [
+              "tools/greenlight/overview",
+              "tools/greenlight/deploy",
+              "tools/greenlight/configuration",
+              "tools/greenlight/tasks",
+              "tools/greenlight/pipelines",
+              "tools/greenlight/storage",
+              "tools/greenlight/webhooks",
+              "tools/greenlight/notifications"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Specification",
+        "groups": [
+          {
+            "group": "ScreenJSON schema",
+            "pages": [
+              "specification/overview",
+              "specification/document-root",
+              "specification/shared-types",
+              "specification/authors",
+              "specification/characters",
+              "specification/scenes",
+              "specification/sluglines",
+              "specification/elements",
+              "specification/revisions-notes",
+              "specification/layout",
+              "specification/analysis",
+              "specification/encryption",
+              "specification/conformance"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "screenjson-cli server",
+            "pages": [
+              "api-reference/cli/introduction"
+            ]
+          },
+          {
+            "group": "screenjson-cli endpoints",
+            "openapi": {
+              "source": "api-reference/cli/openapi.json",
+              "directory": "api-reference/cli/endpoint"
+            }
+          },
+          {
+            "group": "Greenlight service",
+            "pages": [
+              "api-reference/greenlight/introduction"
+            ]
+          },
+          {
+            "group": "Greenlight endpoints",
+            "openapi": {
+              "source": "api-reference/greenlight/openapi.json",
+              "directory": "api-reference/greenlight/endpoint"
+            }
           }
         ]
       }
@@ -71,52 +147,50 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "Main site",
+          "href": "https://screenjson.com",
+          "icon": "globe"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Try the demo",
+          "href": "https://screenjson.com/try/",
+          "icon": "play"
+        },
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/screenjson",
+          "icon": "github"
         }
       ]
     }
   },
   "logo": {
     "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "dark":  "/logo/dark.svg"
   },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "screenjson.com",
+        "href": "https://screenjson.com"
+      },
+      {
+        "label": "GitHub",
+        "href": "https://github.com/screenjson"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Try the demo",
+      "href": "https://screenjson.com/try/"
     }
   },
   "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+    "options": ["copy", "view", "chatgpt", "claude", "perplexity", "mcp", "cursor", "vscode"]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/screenjson"
     }
   }
 }

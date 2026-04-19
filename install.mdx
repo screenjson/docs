@@ -1,0 +1,97 @@
+---
+title: Install
+description: Installation instructions for every ScreenJSON tool.
+---
+
+## screenjson-export
+
+Free, open-source reference CLI. FDX / Fountain / FadeIn → ScreenJSON.
+
+<Tabs>
+  <Tab title="Release binary">
+    Latest: [v1.0.0](https://github.com/screenjson/screenjson-export/releases/tag/v1.0.0).
+
+    ```bash
+    curl -sL https://github.com/screenjson/screenjson-export/releases/download/v1.0.0/screenjson-export_$(uname -s)_$(uname -m).tar.gz | tar -xz
+    sudo mv screenjson-export /usr/local/bin/
+    ```
+  </Tab>
+  <Tab title="Docker">
+    ```bash
+    docker pull screenjson/export:latest
+    ```
+  </Tab>
+  <Tab title="Go install">
+    ```bash
+    go install screenjson/export/cmd/screenjson-export@latest
+    ```
+  </Tab>
+  <Tab title="From source">
+    ```bash
+    git clone https://github.com/screenjson/screenjson-export.git
+    cd screenjson-export
+    go build -trimpath -o screenjson-export ./cmd/screenjson-export
+    sudo mv screenjson-export /usr/local/bin/
+    ```
+  </Tab>
+</Tabs>
+
+## screenjson-cli
+
+Commercial, full-featured CLI.
+
+<Tabs>
+  <Tab title="Docker (recommended)">
+    ```bash
+    docker pull screenjson/cli:latest
+    docker run --rm screenjson/cli help
+    ```
+  </Tab>
+  <Tab title="From source (with license)">
+    ```bash
+    git clone https://github.com/screenjson/screenjson-cli.git
+    cd screenjson-cli
+    go build -o screenjson ./cmd/screenjson
+    sudo mv screenjson /usr/local/bin/
+    ```
+
+    PDF import additionally requires [Poppler](https://poppler.freedesktop.org/):
+
+    ```bash
+    # macOS
+    brew install poppler
+
+    # Debian / Ubuntu
+    sudo apt-get install poppler-utils
+    ```
+  </Tab>
+</Tabs>
+
+## screenjson-ui
+
+Embeddable browser viewer.
+
+<Tabs>
+  <Tab title="npm">
+    ```bash
+    npm install screenjson-ui
+    ```
+  </Tab>
+  <Tab title="CDN (script tag)">
+    ```html
+    <script src="https://cdn.screenjson.com/ui/screenjson-ui.js"></script>
+    ```
+  </Tab>
+</Tabs>
+
+## Greenlight
+
+Batch microservice. See [Greenlight → Deploy](/tools/greenlight/deploy) for the full instructions.
+
+```bash
+git clone https://github.com/screenjson/greenlight.git
+cd greenlight
+cp env.example backend/.env
+docker build -f deployment/Dockerfile -t screenjson/greenlight:latest .
+cd deployment && docker-compose up
+```

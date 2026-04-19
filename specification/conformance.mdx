@@ -1,0 +1,54 @@
+---
+title: Conformance
+description: Validation rules, versioning, and the extension contract.
+---
+
+A ScreenJSON document **conforms** to version *N* of this specification if, and only if, it validates successfully against the JSON Schema published at:
+
+```
+https://screenjson.com/draft/<version>/schema
+```
+
+and at `https://screenjson.com/schema.json` for the canonical draft.
+
+## Guarantees for every conforming document
+
+- Exactly one root `id`, `version`, `title`, `lang`, `charset`, `dir`, `authors`, and `document`.
+- Every referenced UUID — author, contributor, character, scene, element, note, revision, bookmark — exists exactly once in its canonical array.
+- Every text map key is a syntactically valid BCP 47 tag.
+- No object contains properties beyond those permitted by the schema; every object's `additionalProperties` is `false`.
+- Extension data appears only under `meta`.
+
+## Versioning
+
+ScreenJSON uses semantic versioning, recorded in the document's root `version`.
+
+| Bump | When | Guarantee |
+|---|---|---|
+| Major | Backwards-incompatible change | Documents authored against the prior major may not validate. |
+| Minor | New optional fields, new enum values, clarifications | Prior documents continue to validate. |
+| Patch | Editorial fixes only | No schema changes. |
+
+## Tool expectations
+
+- Validators **MUST** reject documents whose root `version` declares a schema version they do not implement.
+- Tools **MUST NOT** silently drop unknown-but-well-formed fields.
+- Tools **MAY** warn on documents whose `version` is older than their target draft but validation still succeeds.
+
+## Reference validator
+
+`screenjson validate --strict` is the reference implementation. Any validator implementing the current JSON Schema draft produces equivalent results on canonical documents.
+
+## Extension model
+
+- Every object has a `meta` string-to-string map.
+- Extension data **MUST** live in `meta`, keyed under vendor-prefixed names — for example `com.example.color-of-the-week`.
+- Keys match `^[A-Za-z0-9_.:-]{1,64}$`; values are 0–2048 characters.
+
+## Changelog
+
+### 2026-01
+
+Initial public draft. `https://screenjson.com/draft/2026-01/schema`.
+
+Document, scene, element, analysis, and encryption blocks stabilised.

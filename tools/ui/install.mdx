@@ -1,0 +1,55 @@
+---
+title: Install
+description: Install screenjson-ui from npm or via the CDN script tag.
+---
+
+## npm
+
+```bash
+npm install screenjson-ui
+```
+
+Package metadata:
+
+| Field | Value |
+|---|---|
+| `name` | `screenjson-ui` |
+| `version` | `1.0.0` |
+| `main` / `module` | `./dist/screenjson-ui.js` |
+| `types` | `./dist/index.d.ts` |
+| `exports["./dist/style.css"]` | Pre-compiled stylesheet for non-Svelte usage. |
+
+## CDN
+
+```html
+<script src="https://cdn.screenjson.com/ui/screenjson-ui.js"></script>
+```
+
+The CDN build is a single ES-module bundle. Use it as the script tag shown above or import it as an ESM URL in modern browsers.
+
+## CSS
+
+If you use the CDN build or a bundler that doesn't auto-import Svelte styles, include the stylesheet:
+
+```html
+<link rel="stylesheet" href="https://cdn.screenjson.com/ui/style.css">
+```
+
+Or, from npm:
+
+```ts
+import 'screenjson-ui/dist/style.css';
+```
+
+## TypeScript
+
+Types ship with the npm package. Import whatever you need:
+
+```ts
+import ScreenJSONUI, {
+  type ScreenJSONUIConfig,
+  type ScreenJSONDocument,
+  type Theme,
+  type Lang,
+} from 'screenjson-ui';
+```

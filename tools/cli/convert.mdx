@@ -1,0 +1,101 @@
+---
+title: convert
+description: Convert screenplay formats to ScreenJSON.
+---
+
+```
+screenjson convert -i <input-file> [-o <output-file>] [options]
+```
+
+Converts **FDX**, **FadeIn**, **Fountain**, **PDF**, **JSON**, or **YAML** input into a ScreenJSON document.
+
+## Flags
+
+### Core
+
+| Flag | Default | Description |
+|---|---|---|
+| `-i` · `--input <path>` | — | Input file. **Required.** |
+| `-o` · `--output <path>` | stdout | Output file (or stdout if omitted / `-`). |
+| `-f` · `--format <name>` | auto | Force input format: `fdx` · `fadein` · `fountain` · `celtx` · `pdf`. |
+| `--yaml` | `false` | Emit YAML instead of JSON. |
+| `--lang <tag>` | `en` | Primary language tag (BCP 47). |
+| `--encrypt <key>` | — | Encrypt content runs with a shared secret (min 10 chars). |
+| `-q` · `--quiet` | `false` | Suppress non-error output. |
+| `--verbose` | `false` | Verbose logging to stderr. |
+
+### PDF import
+
+| Flag | Default | Description |
+|---|---|---|
+| `--pdftohtml <path>` | `$SCREENJSON_PDFTOHTML` or `/opt/homebrew/bin/pdftohtml` | Path to Poppler's `pdftohtml`. |
+| `--pdf-password <pw>` | — | Password for encrypted source PDFs. |
+
+### Database output
+
+| Flag | Description |
+|---|---|
+| `--db <type>` | `elasticsearch` · `mongodb` · `cassandra` · `dynamodb` · `redis`. |
+| `--db-host <host>` | Database host. |
+| `--db-port <port>` | Database port. |
+| `--db-user <user>` | Database username. |
+| `--db-pass <pass>` | Database password. |
+| `--db-collection <name>` | Collection / index name. |
+
+### Blob output
+
+| Flag | Description |
+|---|---|
+| `--blob <type>` | `s3` · `azure` · `minio`. |
+| `--blob-bucket <name>` | Bucket name. |
+| `--blob-key <path>` | Object key / path. Default `<document-id>.json`. |
+| `--blob-region <region>` | AWS region (for S3). |
+| `--blob-endpoint <url>` | Custom endpoint (for MinIO). |
+
+## Format auto-detection
+
+The converter auto-detects input format from file extension:
+
+| Extension | Format |
+|---|---|
+| `.fdx` | `fdx` |
+| `.fadein` | `fadein` |
+| `.fountain`, `.spmd` | `fountain` |
+| `.pdf` | `pdf` |
+| `.json` | `json` |
+| `.yaml`, `.yml` | `yaml` |
+
+Files without a recognised extension require `-f`.
+
+## Examples
+
+```bash
+# FDX → ScreenJSON
+screenjson convert -i screenplay.fdx -o screenplay.json
+
+# Fountain → YAML
+screenjson convert -i screenplay.fountain --yaml -o screenplay.yaml
+
+# PDF with custom pdftohtml
+screenjson convert -i script.pdf --pdftohtml /opt/homebrew/bin/pdftohtml -o script.json
+
+# Password-protected PDF
+screenjson convert -i protected.pdf --pdf-password "secret" -o script.json
+
+# Convert and encrypt in one shot
+screenjson convert -i script.fdx --encrypt "AtLeast10Chars!" -o cipher.json
+
+# Stdout → jq
+screenjson convert -i script.fdx | jq '.title.en'
+
+# Store directly to MongoDB
+screenjson convert -i script.fdx \
+  --db mongodb \
+  --db-host mongodb://localhost:27017 \
+  --db-collection screenplays
+```
+
+## Notes
+
+- The converter auto-validates the output and prints a warning to stderr on validation errors. Use [`validate`](/tools/cli/validate) for strict exit codes.
+- Database and blob output are additive — the converter writes the file, then the DB, then the blob, in order.

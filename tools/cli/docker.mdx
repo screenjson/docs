@@ -1,0 +1,66 @@
+---
+title: Docker
+description: Run screenjson-cli as a Docker container in CLI mode or server mode.
+---
+
+## Pull
+
+```bash
+docker pull screenjson/cli:latest
+```
+
+The image ships Poppler's `pdftohtml` for PDF import; no extra setup required.
+
+## CLI mode
+
+Mount the current directory and run any subcommand:
+
+```bash
+# Help
+docker run --rm screenjson/cli help
+
+# Convert a local file
+docker run --rm -v "$PWD:/data" screenjson/cli \
+  convert -i /data/screenplay.fdx -o /data/screenplay.json
+
+# Validate
+docker run --rm -v "$PWD:/data" screenjson/cli \
+  validate -i /data/screenplay.json --strict
+
+# Export to PDF (A4)
+docker run --rm -v "$PWD:/data" screenjson/cli \
+  export -i /data/screenplay.json -f pdf --pdf-paper a4 -o /data/screenplay.pdf
+```
+
+## Server mode
+
+```bash
+docker run --rm -p 8080:8080 \
+  -e SCREENJSON_GOTENBERG_URL=http://gotenberg:3000 \
+  screenjson/cli serve --port 8080
+```
+
+## docker-compose
+
+```yaml
+services:
+  screenjson:
+    image: screenjson/cli:latest
+    ports: ["8080:8080"]
+    environment:
+      - SCREENJSON_GOTENBERG_URL=http://gotenberg:3000
+      - SCREENJSON_TIKA_URL=http://tika:9998
+    command: ["serve", "--port", "8080"]
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    ports: ["3000:3000"]
+
+  tika:
+    image: apache/tika:latest
+    ports: ["9998:9998"]
+```
+
+## Kubernetes
+
+The same image runs as a `Deployment` in server mode. See [Greenlight deploy](/tools/greenlight/deploy) for an opinionated, queue-backed production configuration on top of this image.

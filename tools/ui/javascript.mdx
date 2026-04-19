@@ -1,0 +1,82 @@
+---
+title: JavaScript API
+description: Embed screenjson-ui via the ScreenJSONUI class.
+---
+
+```ts
+import ScreenJSONUI, { type ScreenJSONUIConfig } from 'screenjson-ui';
+
+const viewer = new ScreenJSONUI({
+  element: 'viewer',        // id or HTMLElement
+  src: '/screenplay.json',
+  theme: 'dark',
+  virtual: true,
+  onLoad:       (doc)  => console.log('loaded', doc.title),
+  onPageChange: (page) => console.log('page', page),
+});
+```
+
+## Constructor
+
+```ts
+new ScreenJSONUI(config: ScreenJSONUIConfig)
+```
+
+The constructor resolves `config.element` immediately and begins initialisation asynchronously.
+
+### `element: string | HTMLElement`
+
+Either an `id` (as a string without the `#`) or an `HTMLElement` reference. If the id does not resolve, the constructor throws `Element not found: <id>`.
+
+### `src: string`
+
+URL of a ScreenJSON document. Fetched and parsed by the internal `DocumentLoader`.
+
+### `document: ScreenJSONDocument`
+
+Pre-loaded ScreenJSON document. Takes precedence over `src` when both are provided.
+
+## Loading precedence
+
+When no `document` is passed, the loader looks for a source in this order:
+
+1. `config.src`
+2. The `?src=` query parameter on the current page URL
+3. The `data-src` / `data-source` attribute on the currently executing `<script>` tag (CDN embed)
+
+If none resolve, the viewer renders an error with a "No Document Source" suggestion.
+
+## Callbacks
+
+| Callback | Argument | Fires |
+|---|---|---|
+| `onLoad` | `ScreenJSONDocument` | Once, after the document loads and the first page renders. |
+| `onPageChange` | `number` (1-based) | On every page change from the menu or scroll. |
+| `onError` | `LoaderError` | On load failure — unknown URL, fetch error, invalid document, wrong password. |
+
+## Complete example
+
+```html
+<div id="viewer" style="height: 100vh;"></div>
+
+<script type="module">
+  import ScreenJSONUI from 'https://cdn.screenjson.com/ui/screenjson-ui.js';
+
+  const viewer = new ScreenJSONUI({
+    element: 'viewer',
+    src: '/screenplay.json',
+    theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+    virtual: true,
+    numbered: true,
+    paginated: true,
+    zoom: 1,
+    lang: 'en',
+    corner: 'top-right',
+    onLoad:       (doc)  => console.log('Loaded', doc.title),
+    onPageChange: (page) => console.log('Page', page),
+    onError:      (err)  => console.error(err),
+  });
+</script>
+```
+
+See [Options](/tools/ui/options) for the full config table.

@@ -1,0 +1,57 @@
+---
+title: Install
+description: Install screenjson-cli via Docker, from source, or as a pre-built binary.
+---
+
+<Warning>
+`screenjson-cli` is commercial. The [source repository](https://github.com/screenjson/screenjson-cli) is private. Contact `hello@screenjson.com` to request access. For the free OSS subset (FDX / Fountain / FadeIn → ScreenJSON), use [`screenjson-export`](/tools/export/install).
+</Warning>
+
+## Docker (recommended)
+
+```bash
+docker pull screenjson/cli:latest
+docker run --rm screenjson/cli help
+```
+
+The image includes Poppler's `pdftohtml` binary for PDF import.
+
+## From source (requires repo access)
+
+```bash
+git clone https://github.com/screenjson/screenjson-cli.git
+cd screenjson-cli
+go build -trimpath -o screenjson ./cmd/screenjson
+sudo mv screenjson /usr/local/bin/
+```
+
+Requires Go 1.22+.
+
+### PDF import prerequisites
+
+PDF import additionally requires [Poppler](https://poppler.freedesktop.org/)'s `pdftohtml`:
+
+```bash
+# macOS
+brew install poppler
+
+# Debian / Ubuntu
+sudo apt-get install poppler-utils
+```
+
+Typical binary paths:
+
+| Platform | Path |
+|---|---|
+| macOS · Apple Silicon | `/opt/homebrew/bin/pdftohtml` |
+| macOS · Intel | `/usr/local/bin/pdftohtml` |
+| Linux | `/usr/bin/pdftohtml` |
+
+Override with `--pdftohtml <path>` or `SCREENJSON_PDFTOHTML`.
+
+## Verify
+
+```bash
+screenjson version
+# → screenjson version 1.0.0
+```

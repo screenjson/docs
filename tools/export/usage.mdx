@@ -1,0 +1,92 @@
+---
+title: Usage
+description: Complete flag reference and end-to-end examples for screenjson-export.
+---
+
+## Synopsis
+
+```
+screenjson-export -i <file> [options]
+```
+
+## Flags
+
+| Flag (short / long) | Default | Description |
+|---|---|---|
+| `-i` · `--input <path>` | — | Input file. **Required.** Extension determines format unless `-f` is set. |
+| `-o` · `--output <path>` | stdout | Output file path. |
+| `-f` · `--format <name>` | auto | Force `fdx`, `fountain`, or `fadein`. |
+| `--lang <tag>` | `en` | BCP 47 primary language tag. Written to the output's `lang` field and becomes the key for every extracted text map. |
+| `--pretty` | `true` | Pretty-print the JSON output with two-space indentation. |
+| `-v` · `--version` | — | Print version and exit. |
+| `-h` · `--help` | — | Print help and exit. |
+
+## Format detection
+
+Auto-detected from extension:
+
+| Extension | Format |
+|---|---|
+| `.fdx` | `fdx` |
+| `.fountain`, `.spmd` | `fountain` |
+| `.fadein` | `fadein` |
+
+Unrecognised extensions require `-f`.
+
+## Examples
+
+```bash
+# FDX → ScreenJSON (stdout)
+screenjson-export -i screenplay.fdx
+
+# Write to file
+screenjson-export -i screenplay.fdx -o screenplay.json
+
+# Fountain, auto-detected
+screenjson-export -i draft.fountain -o draft.json
+
+# FadeIn, auto-detected
+screenjson-export -i episode.fadein -o episode.json
+
+# Force format on a renamed file
+screenjson-export -i script.txt --format fountain -o script.json
+
+# Pipe into jq
+screenjson-export -i screenplay.fdx | jq '.title.en'
+
+# French as primary language
+screenjson-export -i script.fdx --lang fr -o script.json
+
+# Minified JSON (no pretty-print)
+screenjson-export -i screenplay.fdx --pretty=false -o screenplay.min.json
+```
+
+## Docker
+
+```bash
+# Single conversion, current directory mounted
+docker run --rm -v "$PWD:/data" screenjson/export \
+  -i /data/screenplay.fdx -o /data/screenplay.json
+
+# Pipe through jq
+docker run --rm -v "$PWD:/data" screenjson/export -i /data/script.fdx \
+  | jq '.document.scenes | length'
+```
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Success. |
+| `1` | Runtime error (unreadable file, parse error, unsupported format). |
+| `2` | Usage error (missing `-i`, bad flag). |
+
+## Output shape
+
+The output is a ScreenJSON document with `generator` set to:
+
+```json
+{
+  "generator": { "name": "screenjson-export", "version": "v1.0.0" }
+}
+```

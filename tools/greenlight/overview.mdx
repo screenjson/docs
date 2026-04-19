@@ -1,0 +1,39 @@
+---
+title: Overview
+description: Greenlight is a Go + Svelte job queue microservice that wraps screenjson-cli for batch operations.
+---
+
+Greenlight is a **job queue manager** for the ScreenJSON toolchain. It ingests screenplays from object storage, runs pipelines of tasks against the `screenjson` binary, and writes results back.
+
+## Architecture
+
+```
+S3 / MinIO ingest  →  Redis queue  →  Worker supervisor  →  screenjson CLI  →  S3 / MinIO output
+```
+
+Components:
+
+- **Backend** — Go HTTP server (port 8080 by default) with a worker pool and a supervised `worker.Loop` per CPU.
+- **Queue** — Redis, with configurable input / results lists.
+- **Storage** — S3-compatible object store (AWS S3, MinIO, or `noop` for local dev).
+- **Engine** — wraps the `screenjson` CLI binary.
+- **Task executor** — runs declarative task pipelines defined in `config/tasks.yml`.
+- **Frontend** — Svelte + TailwindCSS SPA served by the Go binary. Job list, live progress, submission, task catalogue.
+- **Notifications** — optional fan-out to Slack, Teams, Discord, FCM, APNs, SNS, WebPush.
+
+## What you can do with it
+
+- Ingest a bucket of `.fdx` files nightly, convert them all to ScreenJSON, validate, and file the output.
+- Expose a REST submission endpoint to other services — jobs come in, get queued, get processed, get webhooked back out.
+- Compose pipelines of tasks (convert → validate → encrypt → zip) without writing bash.
+- Run the same binary as your `screenjson serve` instance, but queued, retry-backed, and observable.
+
+## Not in scope
+
+- Not a website CMS. UI is for operators, not end users.
+- Not a multi-tenant billing platform. Single tenant per deployment.
+- No built-in authentication UI — it does basic auth and a shared bearer token if configured.
+
+## Source
+
+Private repository, under commercial licence. See [Deploy](/tools/greenlight/deploy) for all the runtime prerequisites.

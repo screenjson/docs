@@ -1,0 +1,59 @@
+---
+title: Overview
+description: The ScreenJSON schema — structure, principles, and where to find the authoritative definition.
+---
+
+ScreenJSON is a JSON Schema for screenplay documents. The authoritative machine-readable definition lives at [`https://screenjson.com/schema.json`](https://screenjson.com/schema.json).
+
+## Top level
+
+```json
+{
+  "id":       "<uuid>",
+  "version":  "1.0.0",
+  "title":    { "en": "The Heist" },
+  "lang":     "en",
+  "charset":  "utf-8",
+  "dir":      "ltr",
+  "authors":  [ /* one or more */ ],
+  "document": { "cover": { ... }, "scenes": [ ... ] }
+}
+```
+
+### Required at the root
+
+`id`, `version`, `title`, `lang`, `charset`, `dir`, `authors`, `document`.
+
+### Optional at the root
+
+`generator`, `locale`, `contributors`, `characters`, `colors`, `sources`, `registrations`, `revisions`, `encrypt`, `license`, `taggable`, `genre`, `themes`, `logline`, `analysis`.
+
+## Schema draft
+
+Current draft id: `https://screenjson.com/draft/2026-01/schema`.
+Documents pin their authored schema via the root `version` field (semver).
+
+## Design commitments
+
+- **Structural, not presentational.** Element types describe what a thing *is*, not how it looks. Presentation lives in the optional `layout` block.
+- **Language as first-class.** Every user-facing text field is a BCP 47 keyed map.
+- **Stable identity.** Every referenceable node carries an RFC 4122 UUID.
+- **`additionalProperties: false` everywhere.** Extension data lives only in `meta`.
+- **Analysis is additive.** Everything under `analysis` is optional and discardable.
+
+## Reference pages
+
+<CardGroup cols={2}>
+  <Card title="Document root" href="/specification/document-root" icon="file-lines">Required and optional properties at the top of a document.</Card>
+  <Card title="Shared types" href="/specification/shared-types" icon="cubes">uuid, slug, lang, text, name, meta, tags, roles, datetime.</Card>
+  <Card title="Authors & contributors" href="/specification/authors" icon="user-pen">Credit model.</Card>
+  <Card title="Characters" href="/specification/characters" icon="user">Character index.</Card>
+  <Card title="Scenes" href="/specification/scenes" icon="clapperboard">Scene shape with cast and production tags.</Card>
+  <Card title="Sluglines" href="/specification/sluglines" icon="heading">Structured scene headings.</Card>
+  <Card title="Elements" href="/specification/elements" icon="layer-group">Typed scene body elements.</Card>
+  <Card title="Revisions & notes" href="/specification/revisions-notes" icon="git-branch">Editorial passes and anchored annotations.</Card>
+  <Card title="Layout" href="/specification/layout" icon="swatchbook">Optional rendering hints.</Card>
+  <Card title="Analysis" href="/specification/analysis" icon="brain">Embeddings, passages, summaries.</Card>
+  <Card title="Encryption" href="/specification/encryption" icon="lock">AES-256-CTR content encryption.</Card>
+  <Card title="Conformance" href="/specification/conformance" icon="check-circle">Validation, versioning, extensions.</Card>
+</CardGroup>

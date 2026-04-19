@@ -1,0 +1,65 @@
+---
+title: Sluglines
+description: The structured scene heading.
+---
+
+The slugline — the **scene heading** — is one of the few places in screenwriting where formatting is the structure. ScreenJSON decomposes it into parts.
+
+## Shape
+
+```json
+{
+  "no":      14,
+  "context": "INT.",
+  "setting": "VAULT — SUB-LEVEL 3",
+  "time":    "NIGHT",
+  "mods":    ["FLASHBACK", "ESTABLISHING"],
+  "desc":    { "en": "Low-ceilinged. Emergency lighting." },
+  "meta":    {}
+}
+```
+
+## Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `context` | enum | ✓ | `I/E`, `INT/EXT`, `EXT/INT`, `INT`, `EXT`, `POV`. |
+| `setting` | string (1–200) | ✓ | Location text, free-form. |
+| `time` | string | ✓ | Time-of-day / continuity label. See below. |
+| `no` | integer ≥1 | — | Production scene number. |
+| `mods` | string[] unique, each 1–40 chars | — | Additional slugline modifiers — `INTERCUT`, `FLASHBACK`, `ESTABLISHING`, `SAME`, etc. |
+| `desc` | [text](/specification/shared-types#text) | — | Language-keyed description. |
+| `meta` | meta | — | Extension. |
+
+## `time` values
+
+**Enumerated** (preferred):
+
+```
+DAY · NIGHT · DAWN · DUSK · LATER · MOMENTS LATER · CONTINUOUS ·
+MORNING · AFTERNOON · EVENING · THE NEXT DAY
+```
+
+**Custom** values are allowed, constrained by the pattern:
+
+```
+^[A-Z0-9][A-Z0-9 .'’/-]{1,39}$
+```
+
+Uppercase, 2–40 chars, alphanumeric plus space, period, apostrophe, slash, hyphen.
+
+## Rendering
+
+Renderers typically reassemble the slugline into the traditional `INT. SETTING - TIME` form:
+
+```
+INT. VAULT — SUB-LEVEL 3 - NIGHT
+```
+
+The `mods` array is rendered inline with a dash separator:
+
+```
+INT. VAULT - NIGHT - FLASHBACK
+```
+
+Language rendering uses the per-scene or per-element `lang` override if present, otherwise the document root `lang`.

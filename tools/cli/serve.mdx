@@ -1,0 +1,71 @@
+---
+title: serve
+description: Start the REST API server.
+---
+
+```
+screenjson serve [options]
+```
+
+Starts a long-running HTTP server exposing the conversion, export, and validation engine.
+
+## Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--host <addr>` | `0.0.0.0` | Listen host. |
+| `--port <n>` | `8080` | Listen port. |
+| `--workers <n>` | CPU cores | Worker pool size. |
+| `--gotenberg <url>` | — | Gotenberg URL for HTML→PDF rendering. |
+| `--tika <url>` | — | Apache Tika URL for content extraction. |
+| `--llm <url>` | — | OpenAI-compatible LLM endpoint. |
+
+External URLs also come from environment variables (`SCREENJSON_GOTENBERG_URL`, `SCREENJSON_TIKA_URL`, `SCREENJSON_LLM_URL`).
+
+## Endpoints
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/` | Queue status and metrics. |
+| `GET` | `/health` | Health check, including per-service status. |
+| `GET` | `/formats` | List supported formats. |
+| `POST` | `/convert` | Upload a file, receive ScreenJSON. |
+| `POST` | `/export` | Upload ScreenJSON, receive a format. |
+| `POST` | `/validate` | Validate a ScreenJSON document. |
+
+Full request/response details: [API Reference → screenjson-cli endpoints](/api-reference/cli/introduction).
+
+## Request limits
+
+- `/convert`, `/export`: **50 MB** request body.
+- `/validate`: **10 MB** request body.
+
+## CORS
+
+The server emits a permissive CORS policy:
+
+- `Access-Control-Allow-Origin: *`
+- `Access-Control-Allow-Methods: GET, POST, OPTIONS`
+- `Access-Control-Allow-Headers: Content-Type, Authorization`
+
+`OPTIONS` preflight returns `200` with the headers above.
+
+## Examples
+
+```bash
+# Default
+screenjson serve
+
+# Custom port and pool
+screenjson serve --host 127.0.0.1 --port 3000 --workers 16
+
+# With external services
+screenjson serve --gotenberg http://gotenberg:3000 --tika http://tika:9998
+
+# Docker
+docker run --rm -p 8080:8080 screenjson/cli serve --port 8080
+```
+
+## Graceful shutdown
+
+The server catches `SIGINT` and `SIGTERM` and drains in-flight requests with a 30-second timeout before exiting.

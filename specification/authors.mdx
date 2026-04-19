@@ -1,0 +1,55 @@
+---
+title: Authors & contributors
+description: Credit model — original authorship vs. editorial contribution.
+---
+
+ScreenJSON separates two kinds of credit.
+
+## `authors`
+
+Original writers. Required at the root (at least one) and at every element.
+
+```json
+{
+  "id":     "<uuid>",
+  "given":  "Jordan",
+  "family": "Lee",
+  "meta":   {}
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | uuid | ✓ | Stable across the document. |
+| `given` | string (1–50) | ✓ | Given name. |
+| `family` | string (1–50) | ✓ | Family name. |
+| `meta` | meta | — | Extension — e.g. ORCID, WGA id. |
+
+## `contributors`
+
+Anyone who made artistic input **other than** original authorship — editor, director, script doctor, showrunner. Optional.
+
+```json
+{
+  "id":     "<uuid>",
+  "given":  "Ali",
+  "family": "Okonkwo",
+  "roles":  ["editor", "script-doctor"],
+  "meta":   {}
+}
+```
+
+Same fields as author, plus:
+
+| Field | Type | Notes |
+|---|---|---|
+| `roles` | slug[] | Unique list of role slugs. |
+
+## Element-level
+
+Every element in a scene body carries:
+
+- `authors`: uuid[] — at least one author id from the root `authors` array.
+- `contributors`: uuid[] — any contributor ids from the root `contributors`.
+
+Attribution at element granularity means revision history and editorial passes can be recorded without ambiguity.

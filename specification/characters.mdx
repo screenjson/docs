@@ -1,0 +1,48 @@
+---
+title: Characters
+description: The character index referenced by cues and dialogue.
+---
+
+Characters are declared once, at the root, and referenced everywhere else by UUID.
+
+## Shape
+
+```json
+{
+  "id":      "<uuid>",
+  "slug":    "mara",
+  "name":    "MARA",
+  "aliases": ["Mara Halpern", "M."],
+  "desc":    { "en": "A thief, mid-30s." },
+  "traits":  ["lead", "thief", "antihero"],
+  "meta":    {}
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | uuid | ✓ | Stable character identifier. |
+| `name` | string (1–80) | ✓ | Canonical display name — the string rendered in character cues (traditionally uppercase). |
+| `slug` | [slug](/specification/shared-types#slug) | — | Tooling identifier. |
+| `aliases` | string[] (unique, 1–80 each) | — | Alternate names used inside the script. |
+| `desc` | [text](/specification/shared-types#text) | — | Language-keyed description. |
+| `traits` | slug[] (unique) | — | Editorial taxonomy — casting types, narrative roles, demographics. Non-canonical. |
+| `meta` | meta | — | Extension. |
+
+## Canonical vs. alias
+
+- `name` is the single string used in character cues. Pattern matching uses this exactly.
+- `aliases` is an array of alternate strings that should resolve to the same character — typically historical spellings (`M.`) or third-person forms (`Mara Halpern`).
+
+## References
+
+Every element that references a character points to `characters[].id`:
+
+- `cue.character` — the character speaking.
+- `dialogue.character` — the character whose line this is.
+- `scene.cast[]` — every character present in the scene.
+- `note.contributor` — points at a `contributors[].id`, not a character.
+
+## Why UUIDs
+
+UUIDs keep identity stable across renames, aliases, revisions, and localisations. `dialogue.character` always points at the same character, regardless of what cue string was actually rendered (`MARA`, `MARA (V.O.)`, `M.`) or what language the dialogue is in.

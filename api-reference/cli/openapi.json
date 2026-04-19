@@ -1,0 +1,324 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "screenjson-cli REST API",
+    "description": "REST API exposed by `screenjson serve`. Wraps the same conversion, export, validation, and schema engine as the CLI.\n\nStart locally with `screenjson serve --host 0.0.0.0 --port 8080`.",
+    "version": "1.0.0",
+    "contact": { "name": "ScreenJSON", "url": "https://screenjson.com" }
+  },
+  "servers": [
+    { "url": "http://localhost:8080", "description": "Local development" },
+    { "url": "https://api.try.screenjson.com", "description": "Public demo API" }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "status",
+        "summary": "Status and metrics",
+        "description": "Returns a service descriptor with the current queue depth, worker count, and a catalogue of exposed endpoints.",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Service descriptor",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Status" },
+                "example": {
+                  "name": "ScreenJSON CLI API",
+                  "version": "1.0.0",
+                  "status": "running",
+                  "queue": { "pending": 0, "workers": 8 },
+                  "endpoints": [
+                    { "method": "GET",  "path": "/",         "description": "Queue status and metrics" },
+                    { "method": "GET",  "path": "/health",   "description": "Health check" },
+                    { "method": "GET",  "path": "/formats",  "description": "List supported formats" },
+                    { "method": "POST", "path": "/convert",  "description": "Upload file -> ScreenJSON response" },
+                    { "method": "POST", "path": "/export",   "description": "Upload ScreenJSON -> format response" },
+                    { "method": "POST", "path": "/validate", "description": "Validate ScreenJSON document" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Health check",
+        "description": "Returns overall service health plus per-dependency status for any configured external services (Gotenberg, Tika, LLM).",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Health report",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Health" },
+                "example": {
+                  "status": "ok",
+                  "queue": { "pending": 0, "workers": 8 },
+                  "services": { "gotenberg": "ok", "tika": "ok" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/formats": {
+      "get": {
+        "operationId": "listFormats",
+        "summary": "List supported formats",
+        "description": "Returns every format understood by the running binary, with its file extensions, MIME types, and whether it can be used as an input, an output, or both.",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Array of format descriptors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Format" }
+                },
+                "example": [
+                  {
+                    "name": "fdx",
+                    "extensions": [".fdx"],
+                    "mimeTypes": ["application/xml"],
+                    "canDecode": true,
+                    "canEncode": true,
+                    "description": "Final Draft FDX format"
+                  },
+                  {
+                    "name": "fountain",
+                    "extensions": [".fountain", ".spmd"],
+                    "mimeTypes": ["text/plain"],
+                    "canDecode": true,
+                    "canEncode": true,
+                    "description": "Fountain plain-text screenplay format"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/convert": {
+      "post": {
+        "operationId": "convert",
+        "summary": "Convert a screenplay file to ScreenJSON",
+        "description": "Upload a screenplay in a supported writer format. The server returns the resulting ScreenJSON document as JSON.\n\nAccepts either **multipart/form-data** with a `file` field, or a raw body with the format specified via query parameter.\n\nMax request body: **50 MB**.",
+        "tags": ["Conversion"],
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "description": "Input format. Required when sending a raw body; auto-detected from filename when using multipart.",
+            "schema": { "type": "string", "enum": ["fdx", "fadein", "fountain", "pdf", "json", "yaml"] }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "description": "Primary language tag (BCP 47). Defaults to `en`.",
+            "schema": { "type": "string", "default": "en" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file":   { "type": "string", "format": "binary", "description": "Screenplay source file." },
+                  "format": { "type": "string", "enum": ["fdx", "fadein", "fountain", "pdf", "json", "yaml"], "description": "Optional — auto-detected from filename." },
+                  "lang":   { "type": "string", "default": "en", "description": "Primary BCP 47 language tag." }
+                },
+                "required": ["file"]
+              }
+            },
+            "application/octet-stream": {
+              "schema": { "type": "string", "format": "binary" }
+            },
+            "text/plain": {
+              "schema": { "type": "string", "description": "Raw Fountain text." }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ScreenJSON document",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "description": "A ScreenJSON document. See the Specification tab." }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — missing file, unknown format, empty body, or payload too large",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          },
+          "500": {
+            "description": "Conversion error",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          }
+        }
+      }
+    },
+    "/export": {
+      "post": {
+        "operationId": "export",
+        "summary": "Export a ScreenJSON document to a screenplay format",
+        "description": "POST a ScreenJSON document (JSON or YAML) and receive the exported screenplay as a binary download.\n\nThe response's `Content-Type` and `Content-Disposition` are set based on the requested output format.\n\nMax request body: **50 MB**.",
+        "tags": ["Conversion"],
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": true,
+            "description": "Target format.",
+            "schema": { "type": "string", "enum": ["fdx", "fadein", "fountain", "pdf", "json", "yaml"] }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "description": "Primary language tag (BCP 47) used to pick text from each language map.",
+            "schema": { "type": "string", "default": "en" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "type": "object", "description": "ScreenJSON document." } },
+            "application/yaml": { "schema": { "type": "string" } },
+            "application/x-yaml": { "schema": { "type": "string" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exported file",
+            "headers": {
+              "Content-Type": { "schema": { "type": "string" }, "description": "MIME type of the exported format." },
+              "Content-Disposition": { "schema": { "type": "string" }, "description": "`attachment; filename=\"<id>.<ext>\"`." }
+            },
+            "content": {
+              "application/octet-stream": { "schema": { "type": "string", "format": "binary" } }
+            }
+          },
+          "400": { "description": "Missing or unsupported format, or invalid document JSON/YAML" },
+          "500": { "description": "Export error" }
+        }
+      }
+    },
+    "/validate": {
+      "post": {
+        "operationId": "validate",
+        "summary": "Validate a ScreenJSON document",
+        "description": "POST a ScreenJSON document (JSON). Returns `{ valid: true }` on success, or `{ valid: false, errors: [{ path, message }] }` on failure.\n\nMax request body: **10 MB**.",
+        "tags": ["Conversion"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "type": "object", "description": "ScreenJSON document to validate." } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validation result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ValidationResult" },
+                "examples": {
+                  "valid":   { "value": { "valid": true } },
+                  "invalid": { "value": { "valid": false, "errors": [{ "path": "/document/scenes/0/heading", "message": "missing required property: setting" }] } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing body or validator error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Status": {
+        "type": "object",
+        "properties": {
+          "name":    { "type": "string" },
+          "version": { "type": "string" },
+          "status":  { "type": "string", "enum": ["running"] },
+          "queue":   { "$ref": "#/components/schemas/QueueStatus" },
+          "endpoints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "method":      { "type": "string" },
+                "path":        { "type": "string" },
+                "description": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status":   { "type": "string", "enum": ["ok"] },
+          "queue":    { "$ref": "#/components/schemas/QueueStatus" },
+          "services": { "type": "object", "additionalProperties": { "type": "string" } }
+        }
+      },
+      "QueueStatus": {
+        "type": "object",
+        "properties": {
+          "pending": { "type": "integer", "description": "Number of jobs waiting in the queue." },
+          "workers": { "type": "integer", "description": "Worker pool size." }
+        }
+      },
+      "Format": {
+        "type": "object",
+        "properties": {
+          "name":        { "type": "string" },
+          "extensions":  { "type": "array", "items": { "type": "string" } },
+          "mimeTypes":   { "type": "array", "items": { "type": "string" } },
+          "canDecode":   { "type": "boolean" },
+          "canEncode":   { "type": "boolean" },
+          "description": { "type": "string" }
+        }
+      },
+      "ValidationResult": {
+        "type": "object",
+        "properties": {
+          "valid":  { "type": "boolean" },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path":    { "type": "string", "description": "JSON Pointer to the offending node." },
+                "message": { "type": "string" }
+              }
+            }
+          }
+        },
+        "required": ["valid"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": { "error": { "type": "string" } },
+        "required": ["error"]
+      }
+    }
+  }
+}

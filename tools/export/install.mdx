@@ -1,0 +1,65 @@
+---
+title: Install
+description: Install screenjson-export from a release binary, Docker, or source.
+---
+
+## Release binary
+
+Download the archive for your platform from [v1.0.0](https://github.com/screenjson/screenjson-export/releases/tag/v1.0.0), extract, and move to your PATH.
+
+```bash
+curl -sL \
+  https://github.com/screenjson/screenjson-export/releases/download/v1.0.0/screenjson-export_$(uname -s)_$(uname -m).tar.gz \
+  | tar -xz
+sudo mv screenjson-export /usr/local/bin/
+```
+
+Archive names match the six supported targets:
+
+| Platform | Archive |
+|---|---|
+| macOS · Apple Silicon | `screenjson-export_Darwin_arm64.tar.gz` |
+| macOS · Intel | `screenjson-export_Darwin_x86_64.tar.gz` |
+| Linux · amd64 | `screenjson-export_Linux_x86_64.tar.gz` |
+| Linux · arm64 | `screenjson-export_Linux_arm64.tar.gz` |
+| Windows · amd64 | `screenjson-export_Windows_x86_64.zip` |
+| Windows · arm64 | `screenjson-export_Windows_arm64.zip` |
+
+Verify with SHA-256:
+
+```bash
+shasum -a 256 -c checksums.txt
+```
+
+## Docker
+
+```bash
+docker pull screenjson/export:latest
+docker run --rm -v "$PWD:/data" screenjson/export -i /data/screenplay.fdx
+```
+
+The image is [distroless/static](https://github.com/GoogleContainerTools/distroless/tree/main/base), nonroot, ~5 MB.
+
+## Go install
+
+```bash
+go install screenjson/export/cmd/screenjson-export@latest
+```
+
+## From source
+
+```bash
+git clone https://github.com/screenjson/screenjson-export.git
+cd screenjson-export
+go build -trimpath -ldflags="-s -w" -o screenjson-export ./cmd/screenjson-export
+sudo mv screenjson-export /usr/local/bin/
+```
+
+Requires Go 1.22+.
+
+## Verify
+
+```bash
+screenjson-export --version
+# → screenjson-export v1.0.0
+```

@@ -1,0 +1,56 @@
+---
+title: Encrypted documents
+description: Open encrypted ScreenJSON documents in the viewer.
+---
+
+When a document's `encrypt` block is set, the viewer can decrypt text in-browser before rendering.
+
+## Detection
+
+The loader calls `hasEncryptedContent(doc)` on every load. If encrypted content is detected, one of two flows runs:
+
+1. **Password in config** — if `password` was passed in config, it's used to decrypt in-memory.
+2. **Password modal** — otherwise a `PasswordModal` component is rendered, prompting the user.
+
+## JavaScript
+
+```ts
+new ScreenJSONUI({
+  element: 'viewer',
+  src: '/encrypted.json',
+  password: 'SharedSecret123',
+});
+```
+
+## Svelte
+
+```svelte
+<ScreenJSONViewer src="/encrypted.json" password="SharedSecret123" />
+```
+
+## Programmatic helpers
+
+Imported from the library:
+
+```ts
+import {
+  hasEncryptedContent,
+  decryptDocument,
+  decryptText,
+} from 'screenjson-ui';
+
+const doc = await fetch('/encrypted.json').then((r) => r.json());
+if (hasEncryptedContent(doc)) {
+  decryptDocument(doc, 'SharedSecret123');
+}
+```
+
+| Helper | Signature | Purpose |
+|---|---|---|
+| `hasEncryptedContent(doc)` | `(doc: ScreenJSONDocument) => boolean` | Detects encryption on any element in the document. |
+| `decryptDocument(doc, key)` | Mutates in place. | Decrypts every encrypted text run in the document tree. |
+| `decryptText(cipher, key, encoding?)` | Returns plain text. | Decrypts a single AES-256-CTR text run. |
+
+## Errors
+
+When a wrong password is supplied, the viewer calls `onError` with a `LoaderError` carrying `code: 'DECRYPT_FAILED'`. The modal flow retries until the user cancels or succeeds.

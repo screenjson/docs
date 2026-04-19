@@ -1,0 +1,116 @@
+---
+title: Shared types
+description: Scalar and small-object types reused across the schema.
+---
+
+ScreenJSON reuses a small set of types everywhere. Understanding them once makes the rest of the schema read itself.
+
+## `uuid`
+
+RFC 4122 UUID string. Pattern `8-4-4-4-12`, hex.
+
+## `slug`
+
+Lowercase, kebab-cased identifier.
+
+| Pattern | `^[a-z0-9]+(?:-[a-z0-9]+)*$` |
+| Length | 3–50 characters |
+| Example | `production-draft`, `revolver`, `mara` |
+
+## `lang`
+
+BCP 47 language tag.
+
+| Pattern | `^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$` |
+| Default | `en` |
+| Examples | `en`, `en-GB`, `fr-CA`, `ja`, `zh-Hant`, `sr-Latn-RS` |
+
+## `dir`
+
+| Values | `ltr`, `rtl` |
+| Default | `ltr` |
+
+## `charset`
+
+IANA character set label.
+
+| Pattern | `^[A-Za-z0-9][A-Za-z0-9._:-]{1,31}$` |
+| Default | `utf-8` |
+
+## `datetime`
+
+ISO 8601 date-time. Format `date-time`.
+
+## `text`
+
+A map keyed by `lang` with text values.
+
+| Pattern for keys | `lang` regex |
+| Value length | 1–10,000 characters |
+| Default | `{}` |
+| Used on | action, dialogue, parenthetical, shot, transition, general `text`; note `text`; slugline `desc`; character `desc`; source `title`; logline; cover `extra`; ribbon `text`; passage `text`; summary `text`. |
+
+## `name`
+
+Short-form variant of `text`.
+
+| Value length | 1–255 characters |
+| Used on | root `title`, character `name` (wait: `name` is a single string, see below), cover `title`, source `title` when short. |
+
+## `meta`
+
+Free-form string key/value extension map.
+
+| Key pattern | `^[A-Za-z0-9_.:-]{1,64}$` |
+| Value length | 0–2,048 characters |
+| Default | `{}` |
+| Present on | every object. The **only** place extension data is permitted. |
+
+## `tags` and `roles`
+
+Arrays of unique [slug](#slug) values. Order is not semantic.
+
+## `format`
+
+Reference to an external screenplay presentation standard, informational only.
+
+```json
+{
+  "id":    "wb-final-draft",
+  "title": "Warner Bros / Final Draft convention",
+  "url":   "https://...",
+  "note":  "..."
+}
+```
+
+## `color`
+
+Reusable named colour.
+
+```json
+{
+  "id":  "red",
+  "rgb": [220, 38, 38],
+  "hex": "#DC2626"
+}
+```
+
+## `registration`
+
+```json
+{
+  "authority": "WGA-West",
+  "id":        "R-1234567",
+  "created":   "2026-01-02T10:00:00Z",
+  "modified":  "2026-01-10T12:30:00Z"
+}
+```
+
+## `license`
+
+```json
+{
+  "id":  "CC-BY-NC-4.0",
+  "ref": "https://creativecommons.org/licenses/by-nc/4.0/"
+}
+```

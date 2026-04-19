@@ -1,0 +1,166 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Greenlight — Screenplay Conversion & Validation API",
+    "description": "REST API for the Greenlight screenplay microservice. Converts between screenplay formats (FDX, Fountain, FadeIn, PDF) and ScreenJSON, with validation and encryption.",
+    "version": "1.0.0",
+    "contact": { "name": "Edverum" }
+  },
+  "servers": [
+    { "url": "http://localhost:8080", "description": "Local development" },
+    { "url": "http://localhost:19000", "description": "Docker compose (mapped port)" }
+  ],
+  "paths": {
+    "/up": {
+      "get": {
+        "operationId": "healthCheck",
+        "summary": "Health check",
+        "tags": ["Health"],
+        "responses": { "200": { "description": "Server is healthy" } }
+      }
+    },
+    "/setup": {
+      "get": {
+        "operationId": "getSetup",
+        "summary": "Server configuration snapshot",
+        "tags": ["Config"],
+        "responses": { "200": { "description": "Configuration snapshot" } }
+      }
+    },
+    "/push": {
+      "post": {
+        "operationId": "pushJob",
+        "summary": "Queue a screenplay conversion job",
+        "tags": ["Jobs"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PushRequest" },
+              "examples": {
+                "fdx-to-screenjson": {
+                  "summary": "Convert FDX to ScreenJSON",
+                  "value": {
+                    "input_key": "screenplays/input/script.fdx",
+                    "output_key": "screenplays/output/script-v1",
+                    "document_id": "12345",
+                    "tasks": ["convert-fdx-to-screenjson", "validate-screenjson"]
+                  }
+                },
+                "export-multi": {
+                  "summary": "Export to multiple formats",
+                  "value": {
+                    "input_key": "screenplays/input/script.json",
+                    "output_key": "screenplays/output/exports",
+                    "document_id": "12345",
+                    "tasks": ["export-to-fdx", "export-to-fountain", "export-to-pdf", "zip-output"]
+                  }
+                },
+                "encrypt": {
+                  "summary": "Encrypt a ScreenJSON document",
+                  "value": {
+                    "input_key": "screenplays/input/script.json",
+                    "output_key": "screenplays/output/encrypted",
+                    "document_id": "12345",
+                    "tasks": ["encrypt-screenjson"],
+                    "vars": { "encrypt_key": "mysecretkey123" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Job enqueued", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PushResponse" } } } },
+          "400": { "description": "Validation error" }
+        }
+      }
+    },
+    "/results": {
+      "get": {
+        "operationId": "listResults",
+        "summary": "List recent job results",
+        "tags": ["Results"],
+        "responses": { "200": { "description": "List of results" } }
+      }
+    },
+    "/results/{id}": {
+      "get": {
+        "operationId": "getResult",
+        "summary": "Get a specific job result",
+        "tags": ["Results"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Job result" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/tasks": {
+      "get": {
+        "operationId": "listTasks",
+        "summary": "List available tasks",
+        "tags": ["Tasks"],
+        "responses": { "200": { "description": "Task definitions" } }
+      }
+    },
+    "/workers": {
+      "get": {
+        "operationId": "getWorkers",
+        "summary": "Live worker status",
+        "tags": ["Workers"],
+        "responses": { "200": { "description": "Worker status" } }
+      }
+    },
+    "/storage": {
+      "get": {
+        "operationId": "listStorage",
+        "summary": "Browse S3/MinIO storage",
+        "tags": ["Storage"],
+        "responses": { "200": { "description": "Storage objects" } }
+      }
+    },
+    "/webhooks": {
+      "get": {
+        "operationId": "getWebhooks",
+        "summary": "Webhook configuration",
+        "tags": ["Webhooks"],
+        "responses": { "200": { "description": "Webhook status" } }
+      }
+    },
+    "/tail": {
+      "get": {
+        "operationId": "getLogTail",
+        "summary": "Server log tail",
+        "tags": ["Debug"],
+        "responses": { "200": { "description": "Recent log lines" } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PushRequest": {
+        "type": "object",
+        "required": ["input_key", "output_key", "document_id", "tasks"],
+        "properties": {
+          "input_key": { "type": "string", "example": "screenplays/input/script.fdx" },
+          "output_key": { "type": "string", "example": "screenplays/output/script-v1" },
+          "document_id": { "type": "string", "example": "12345" },
+          "tasks": { "type": "array", "items": { "type": "string" }, "example": ["convert-fdx-to-screenjson", "validate-screenjson"] },
+          "vars": { "type": "object", "additionalProperties": true, "example": { "encrypt_key": "mysecretkey123" } },
+          "webhook": { "type": "string" },
+          "tenant_id": { "type": "string" }
+        }
+      },
+      "PushResponse": {
+        "type": "object",
+        "properties": {
+          "job_id": { "type": "string" },
+          "status": { "type": "string", "example": "queued" }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer" },
+      "basicAuth": { "type": "http", "scheme": "basic" }
+    }
+  },
+  "security": [{ "bearerAuth": [] }]
+}

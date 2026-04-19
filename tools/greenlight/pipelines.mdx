@@ -1,0 +1,94 @@
+---
+title: Pipelines
+description: Compose tasks into ordered pipelines submitted via POST /push.
+---
+
+A **pipeline** is an ordered list of task names submitted to the queue as a single job. Tasks run sequentially against the output of the previous step.
+
+## Submission shape
+
+```json
+{
+  "input_key":   "screenplays/input/script.fdx",
+  "output_key":  "screenplays/output/script-v1",
+  "document_id": "12345",
+  "tasks":       ["convert-fdx-to-screenjson", "validate-screenjson"],
+  "vars":        { "encrypt_key": "secret" },
+  "webhook":     "https://example.com/callback",
+  "tenant_id":   "acme"
+}
+```
+
+Submitted to [`POST /push`](/api-reference/greenlight/endpoint/push-job).
+
+## Fields
+
+| Field | Type | Required | Purpose |
+|---|---|---|---|
+| `input_key` | string | ✓ | Object key of the source file in `S3_INPUT_BUCKET`. |
+| `output_key` | string | ✓ | Base prefix for all pipeline outputs in `S3_OUTPUT_BUCKET`. |
+| `document_id` | string | ✓ | Your own identifier. Included in events and webhook payloads. |
+| `tasks` | string[] | ✓ | One or more task names from [the catalogue](/tools/greenlight/tasks). |
+| `vars` | object | — | Task variables — e.g. `encrypt_key`. Merged with task-defined `params`. |
+| `webhook` | string | — | Per-job webhook URL. Combined with `DEFAULT_WEBHOOK_URLS`. |
+| `tenant_id` | string | — | Arbitrary tenant tag; surfaces in metrics and webhook payloads. |
+
+## Example pipelines
+
+### FDX → validated ScreenJSON
+
+```json
+{
+  "input_key":   "screenplays/input/script.fdx",
+  "output_key":  "screenplays/output/script",
+  "document_id": "S1E04",
+  "tasks": ["convert-fdx-to-screenjson", "validate-screenjson"]
+}
+```
+
+### ScreenJSON → multi-format ZIP
+
+```json
+{
+  "input_key":   "screenplays/input/script.json",
+  "output_key":  "screenplays/output/bundle",
+  "document_id": "S1E04",
+  "tasks": [
+    "export-to-fdx",
+    "export-to-fountain",
+    "export-to-pdf",
+    "zip-output"
+  ]
+}
+```
+
+### Convert from Fountain, encrypt for distribution
+
+```json
+{
+  "input_key":   "screenplays/input/script.fountain",
+  "output_key":  "screenplays/output/encrypted",
+  "document_id": "S1E04",
+  "tasks": ["convert-fountain-to-screenjson", "encrypt-screenjson"],
+  "vars":  { "encrypt_key": "mysecretkey123" }
+}
+```
+
+## How it runs
+
+1. A worker claims the job from Redis (`REDIS_INPUT_QUEUE`).
+2. It downloads `input_key` from object storage.
+3. For each task in order, it invokes `greenlight.<handler>` against the current working file. Outputs land in `{output_key}/{task.output_dir}/{stem}.{ext}`.
+4. Results are written to `REDIS_RESULTS_QUEUE` with TTL `REDIS_RESULTS_TTL` hours.
+5. Webhooks fire (per-job and defaults).
+6. Notifications fan out to any configured drivers.
+
+Failed tasks abort the pipeline; outputs already written stay in place.
+
+## Status and results
+
+Track progress with:
+
+- [`GET /results`](/api-reference/greenlight/endpoint/list-results) — paginated list of recent jobs.
+- [`GET /results/{id}`](/api-reference/greenlight/endpoint/get-result) — one specific job, including per-task timings and output keys.
+- [`GET /workers`](/api-reference/greenlight/endpoint/get-workers) — live worker status.

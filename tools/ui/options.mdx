@@ -1,0 +1,60 @@
+---
+title: Configuration options
+description: The complete ScreenJSONUIConfig reference.
+---
+
+Every viewer — whether embedded via `new ScreenJSONUI(...)`, auto-mounted from a CDN script tag, or passed as Svelte props — supports the same option set.
+
+## `ScreenJSONUIConfig`
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `element` | `string \| HTMLElement` | — **required** | Mount point. String is treated as an `id`. |
+| `src` | `string` | — | URL to fetch the ScreenJSON document from. |
+| `document` | `ScreenJSONDocument` | — | Pre-loaded document. Takes precedence over `src`. |
+| `theme` | `'light' \| 'dark'` | `'light'` | Initial theme. |
+| `zoom` | `number` | `1` | 0.5 – 2. |
+| `lang` | `Lang` | document `lang` | BCP 47 tag for which text key to render. |
+| `page` | `number` | `1` | Initial page (1-based). |
+| `numbered` | `boolean` | `false` | Show scene numbers in the margin. |
+| `paginated` | `boolean` | `true` | Show page numbers. |
+| `corner` | `'top-left' \| 'top-right' \| 'bottom-left' \| 'bottom-right'` | `'top-right'` | Menu button position. |
+| `virtual` | `boolean` | `false` | Use virtual scrolling — required for 50+ page documents. |
+| `password` | `string` | — | Password for encrypted content. If omitted on an encrypted document, the viewer opens a `PasswordModal`. |
+| `onLoad` | `(doc: ScreenJSONDocument) => void` | — | Called once on successful load. |
+| `onPageChange` | `(page: number) => void` | — | Called on every page change. |
+| `onError` | `(err: LoaderError) => void` | — | Called on fetch / parse / decrypt error. |
+
+## `Theme`
+
+```ts
+type Theme = 'light' | 'dark';
+```
+
+## `Lang`
+
+BCP 47 language tag string — e.g. `en`, `en-GB`, `fr-CA`, `ja`, `zh-Hant`.
+
+## Formatting constants
+
+The viewer exports formatting constants from `screenjson-ui/constants/formatting`:
+
+```ts
+import {
+  PAPER_LETTER_WIDTH,   // 8.5 inches
+  PAPER_LETTER_HEIGHT,  // 11 inches
+  PAPER_A4_WIDTH,
+  PAPER_A4_HEIGHT,
+  FONT_COURIER_PRIME,   // 'Courier Prime'
+  LINES_PER_PAGE,       // 60
+  // Margins in inches
+  ACTION_MARGIN_LEFT,         // 1.7
+  ACTION_MARGIN_RIGHT,        // 1.1
+  DIALOGUE_MARGIN_LEFT,       // 2.7
+  DIALOGUE_MARGIN_RIGHT,      // 2.4
+  CHARACTER_MARGIN_LEFT,      // 4.1
+  PARENTHETICAL_MARGIN_LEFT,  // 3.4
+  PARENTHETICAL_MARGIN_RIGHT, // 3.1
+  TRANSITION_MARGIN_LEFT,     // 6.0
+} from 'screenjson-ui';
+```

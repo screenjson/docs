@@ -1,0 +1,79 @@
+---
+title: Revisions & notes
+description: Editorial pass markers and anchored annotations.
+---
+
+## Revisions
+
+A revision describes a discrete editorial pass. Lives at the document root (`revisions[]`) or inside an element (`element.revisions[]`).
+
+```json
+{
+  "id":       "<uuid>",
+  "parent":   "<uuid>",
+  "index":    3,
+  "authors":  ["<uuid>"],
+  "label":    "blue",
+  "created":  "2026-01-14T10:12:00Z"
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | uuid | ✓ | Revision identifier. |
+| `index` | integer ≥0 | ✓ | Ordinal index within the parent revision chain. |
+| `authors` | uuid[] | ✓ | At least one author id. |
+| `label` | slug (3–30) | ✓ | Named label. Common values: `draft`, `blue`, `pink`, `yellow`, `production-draft`, `final`. |
+| `created` | datetime | ✓ | ISO 8601. |
+| `parent` | uuid | — | Revision this was forked from. |
+| `meta` | meta | — | Extension. |
+
+### Status block
+
+The industry revision status — lives under `document.layout.status`:
+
+```json
+{
+  "color":   "blue",
+  "round":   2,
+  "updated": "2026-01-14T10:12:00Z"
+}
+```
+
+`color` enum (industry-standard order):
+
+```
+white · blue · pink · yellow · green · goldenrod · buff · salmon · cherry
+```
+
+## Notes
+
+Notes are annotations anchored to an element (or another note) via character index ranges.
+
+```json
+{
+  "id":         "<uuid>",
+  "parent":     "<uuid>",
+  "highlight":  [[12, 27]],
+  "contributor":"<uuid>",
+  "created":    "2026-01-14T10:20:00Z",
+  "text":       { "en": "Too on-the-nose." },
+  "color":      "amber",
+  "meta":       {}
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | uuid | ✓ | Note identifier. |
+| `created` | datetime | ✓ | ISO 8601. |
+| `text` | [text](/specification/shared-types#text) | ✓ | Language map. |
+| `parent` | uuid | — | Element (or note) the note is attached to. |
+| `highlight` | `[[int, int], ...]` | — | Array of `[start, end]` Unicode codepoint ranges within the rendered text of the parent element. |
+| `contributor` | uuid | — | Contributor who wrote the note. |
+| `color` | slug | — | Reference to a `colors[].id`. |
+| `meta` | meta | — | Extension. |
+
+## Why UUIDs for notes
+
+Anchored via `parent: uuid` and `highlight` ranges, notes survive rewrites of the surrounding element as long as the targeted stretch of text is still present. Renderers look up `parent`, find the element, and apply the highlight ranges to the rendered text.

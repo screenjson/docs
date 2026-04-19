@@ -1,0 +1,82 @@
+---
+title: Svelte component
+description: Drop ScreenJSONViewer into a Svelte or SvelteKit app.
+---
+
+```svelte
+<script lang="ts">
+  import { ScreenJSONViewer } from 'screenjson-ui';
+  import type { ScreenJSONDocument } from 'screenjson-ui';
+
+  export let document: ScreenJSONDocument;
+  let theme: 'light' | 'dark' = 'light';
+</script>
+
+<ScreenJSONViewer {document} {theme} numbered virtual />
+```
+
+## Component props
+
+`ScreenJSONViewer` accepts the same options as the JavaScript constructor, bound as props:
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `document` | `ScreenJSONDocument` | — | Pre-loaded document. |
+| `src` | `string` | — | URL to load from (alternative to `document`). |
+| `theme` | `'light' \| 'dark'` | `'light'` | Theme. |
+| `zoom` | `number` | `1` | 0.5 – 2. |
+| `lang` | `Lang` | document default | Render language. |
+| `page` | `number` | `1` | Initial page (1-based). |
+| `numbered` | `boolean` | `false` | Show scene numbers. |
+| `paginated` | `boolean` | `true` | Show page numbers. |
+| `corner` | `'top-left' \| 'top-right' \| 'bottom-left' \| 'bottom-right'` | `'top-right'` | Menu position. |
+| `virtual` | `boolean` | `false` | Virtual scrolling. |
+| `password` | `string` | — | Decrypt password for encrypted content. |
+
+## Other exported components
+
+For custom layouts:
+
+```ts
+import {
+  ScreenJSONViewer,
+  ViewerVirtual,
+  Page,
+  Menu,
+  MetadataPanel,
+  ErrorDisplay,
+  PasswordModal,
+  VirtualScroller,
+} from 'screenjson-ui';
+```
+
+## Stores
+
+Three reactive Svelte stores are exported:
+
+```ts
+import { themeStore, settingsStore, documentStore } from 'screenjson-ui';
+import type { Theme } from 'screenjson-ui';
+
+$themeStore = 'dark';
+```
+
+## SvelteKit route example
+
+```ts
+// +page.ts
+export async function load({ fetch, params }) {
+  const doc = await fetch(`/screenplays/${params.slug}.json`).then((r) => r.json());
+  return { doc };
+}
+```
+
+```svelte
+<!-- +page.svelte -->
+<script lang="ts">
+  import { ScreenJSONViewer } from 'screenjson-ui';
+  export let data;
+</script>
+
+<ScreenJSONViewer document={data.doc} theme="dark" virtual />
+```

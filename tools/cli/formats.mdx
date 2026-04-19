@@ -1,0 +1,48 @@
+---
+title: formats
+description: List every format the running binary understands.
+---
+
+```
+screenjson formats
+```
+
+Prints every format registered in the pipeline, with its file extensions and whether it can be used for import, export, or both.
+
+## Output shape
+
+```
+Supported Formats:
+----------------------------------------------------------------------
+fdx          Final Draft FDX format
+             Extensions: .fdx
+             Capabilities: import, export
+
+fadein       FadeIn OSF format (ZIP with document.xml)
+             Extensions: .fadein
+             Capabilities: import, export
+
+fountain     Fountain plain-text screenplay format
+             Extensions: .fountain, .spmd
+             Capabilities: import, export
+
+pdf          PDF screenplay format
+             Extensions: .pdf
+             Capabilities: import, export
+
+json         ScreenJSON native format
+             Extensions: .json
+             Capabilities: import, export
+
+yaml         YAML serialization of ScreenJSON
+             Extensions: .yaml, .yml
+             Capabilities: import, export
+
+celtx        Celtx project format (placeholder)
+             Extensions: .celtx
+             Capabilities: (not yet implemented)
+```
+
+## Use in scripts
+
+The `formats` output is intended to be human-readable. For programmatic use, hit [`GET /formats`](/api-reference/cli/endpoint/list-formats) on a running server instead — it returns the same data as JSON with additional MIME type information.

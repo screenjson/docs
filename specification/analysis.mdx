@@ -1,0 +1,115 @@
+---
+title: Analysis
+description: Derived retrieval-oriented data attached to a canonical document.
+---
+
+The `analysis` block carries derived data for retrieval and AI workflows. Optional and discardable — a document without `analysis` is still canonical.
+
+## Shape
+
+```json
+{
+  "analysis": {
+    "embeddings": { "<target-uuid>": [ /* embeddings */ ] },
+    "passages":   [ /* passages */ ],
+    "summaries":  [ /* summaries */ ],
+    "settings":   { /* how this was produced */ },
+    "meta":       {}
+  }
+}
+```
+
+## `embeddings`
+
+A map keyed by the **UUID of the target** (a scene, element, or character). Value is an array of one or more embedding records.
+
+```json
+{
+  "id":         "<embedding-uuid>",
+  "model":      "text-embedding-3-large",
+  "dimensions": 1536,
+  "values":     [0.023, -0.041, ...],
+  "source":     "text",
+  "lang":       "en",
+  "tokens":     420,
+  "created":    "2026-01-14T10:30:00Z"
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | uuid | ✓ | Embedding identifier. |
+| `model` | string (1–100) | ✓ | Model identifier. |
+| `dimensions` | integer 1–4096 | ✓ | Vector length. |
+| `values` | number[] 1–4096 | ✓ | Vector payload. |
+| `source` | enum | ✓ | Which field was embedded. `name`, `text`, `desc`, `heading`, `composite`. |
+| `created` | datetime | ✓ | ISO 8601. |
+| `lang` | lang | — | BCP 47 tag the source text was drawn from. |
+| `tokens` | integer ≥1 | — | Token count of the source text. |
+| `meta` | meta | — | Extension. |
+
+Keys in the `embeddings` map are matched against the UUID pattern — only valid RFC 4122 strings are accepted.
+
+## `passages`
+
+Retrieval-sized text chunks keyed to source elements.
+
+```json
+{
+  "id":       "<uuid>",
+  "scene":    "<scene-uuid>",
+  "elements": ["<element-uuid>", "<element-uuid>"],
+  "text":     { "en": "..." },
+  "tokens":   256,
+  "overlap":  32
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | uuid | ✓ | |
+| `scene` | uuid | ✓ | |
+| `elements` | uuid[] (≥1) | ✓ | Element ids covered by this passage. |
+| `text` | [text](/specification/shared-types#text) | ✓ | Passage text, language-keyed. |
+| `tokens` | integer ≥1 | ✓ | |
+| `overlap` | integer ≥0 | — | Sliding-window overlap in tokens. Default `0`. |
+| `meta` | meta | — | Extension. |
+
+## `summaries`
+
+Document- or scene-scoped summaries.
+
+```json
+{
+  "id":        "<uuid>",
+  "scope":     "scene",
+  "target":    "<scene-uuid>",
+  "generated": true,
+  "model":     "claude-opus-4-7",
+  "text":      { "en": "..." },
+  "created":   "2026-01-14T10:45:00Z"
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | uuid | ✓ | |
+| `scope` | enum | ✓ | `document` or `scene`. |
+| `text` | [text](/specification/shared-types#text) | ✓ | Summary text. |
+| `created` | datetime | ✓ | ISO 8601. |
+| `target` | uuid \| null | — | Scene id when `scope="scene"`. |
+| `generated` | boolean | — | `true` for machine-generated. Default `false`. |
+| `model` | string (≤100) | — | Producing model id. |
+| `meta` | meta | — | Extension. |
+
+## `settings`
+
+Records how derived data was produced — for reproducibility.
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `model` | string (≤100) | — | Embedding or summary model. |
+| `size` | integer ≥1 | `512` | Chunk size. |
+| `overlap` | integer ≥0 | `64` | Chunk overlap. |
+| `tokeniser` | string (≤50) | — | Tokeniser identifier — e.g. `cl100k`. |
+| `meta` | meta | `{}` | Extension. |

@@ -1,0 +1,67 @@
+---
+title: Scenes
+description: Scene shape — heading, body, cast, production-breakdown taxonomies.
+---
+
+## Shape
+
+```json
+{
+  "id":       "<uuid>",
+  "authors":  ["<uuid>"],
+  "heading":  { /* slugline */ },
+  "body":    [ /* elements */ ],
+  "cast":    ["<uuid>"],
+
+  "animals": [],
+  "extra":   [],
+  "locations": [],
+  "moods":   [],
+  "props":   [],
+  "sfx":     [],
+  "sounds":  [],
+  "tags":    [],
+  "vfx":     [],
+  "wardrobe": [],
+
+  "contributors": [],
+  "meta": {}
+}
+```
+
+## Required
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | uuid | Scene identifier. |
+| `authors` | uuid[] (≥1) | Author ids from the root. |
+| `heading` | [slugline](/specification/sluglines) | Structured scene heading. |
+| `body` | array | Ordered list of [elements](/specification/elements). May be empty for outlining. |
+
+## Optional
+
+| Field | Type | Description |
+|---|---|---|
+| `contributors` | uuid[] | Contributors who touched this scene. |
+| `cast` | uuid[] unique | Characters present in the scene. Projection over `body`. |
+| `animals` | slug[] unique | Any animal taxonomy. |
+| `extra` | slug[] unique | Extras required. |
+| `locations` | slug[] unique | Additional location tags beyond the heading. |
+| `moods` | slug[] unique | Mood tags. |
+| `props` | slug[] unique | Props. |
+| `sfx` | slug[] unique | Special effects. |
+| `sounds` | slug[] unique | Sound design cues. |
+| `tags` | slug[] unique | Free-form editorial tags. |
+| `vfx` | slug[] unique | Visual effects. |
+| `wardrobe` | slug[] unique | Wardrobe. |
+| `meta` | meta | Extension. |
+
+## Breakdown semantics
+
+The ten production taxonomies — `animals`, `extra`, `locations`, `moods`, `props`, `sfx`, `sounds`, `tags`, `vfx`, `wardrobe` — are each a unique array of slugs. Populated by breakdown tools, they make scheduling, budgeting, and discovery queryable without re-parsing scene text.
+
+A prop referenced as `"revolver"` in scene 3 is the same prop as `"revolver"` in scene 47 — the slug is the identifier.
+
+## `cast` as a projection
+
+`cast` is redundant with the character references inside `body` elements, but is kept as an explicit array so tooling can answer "who is in this scene" without walking the body. It should contain every character uuid referenced by any `dialogue` or `character` (cue) element inside `body`.

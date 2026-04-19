@@ -1,0 +1,41 @@
+---
+title: decrypt
+description: Decrypt an encrypted ScreenJSON document.
+---
+
+```
+screenjson decrypt -i <input.json> -o <output.json> --key <secret>
+```
+
+Reverses a previous `screenjson encrypt` pass.
+
+## Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `-i` · `--input <path>` | — | Encrypted ScreenJSON file. **Required.** |
+| `-o` · `--output <path>` | — | Decrypted output path. **Required.** |
+| `--key <secret>` | `$SCREENJSON_ENCRYPT_KEY` | Shared secret used to encrypt the document. |
+
+## Examples
+
+```bash
+# Explicit key
+screenjson decrypt -i cipher.json -o plain.json --key "AtLeast10Chars!"
+
+# Key from environment
+export SCREENJSON_ENCRYPT_KEY="AtLeast10Chars!"
+screenjson decrypt -i cipher.json -o plain.json
+
+# Decrypt on the way out to a screenplay format
+screenjson export -i cipher.json -f fdx --decrypt "AtLeast10Chars!" -o script.fdx
+```
+
+## Errors
+
+A wrong key fails with a clear error rather than silently producing junk output. The operation is strict: partial decrypts are not emitted.
+
+| Error | Meaning |
+|---|---|
+| `Error: decryption key required` | No `--key` and `SCREENJSON_ENCRYPT_KEY` unset. |
+| `Error decrypting: ...` | Key mismatch or document not encrypted. |

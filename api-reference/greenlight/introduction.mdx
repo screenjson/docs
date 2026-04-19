@@ -1,0 +1,61 @@
+---
+title: Introduction
+description: The Greenlight REST API.
+---
+
+Greenlight exposes a REST API on port `8080` (mapped to `19000` in the default docker-compose). Use it to submit jobs, list results, check worker status, and configure webhooks.
+
+## Base URLs
+
+| Environment | URL |
+|---|---|
+| Local (backend direct) | `http://localhost:8080` |
+| Docker Compose (mapped) | `http://localhost:19000` |
+| Production | whatever you've deployed — typically behind a reverse proxy |
+
+## Endpoints at a glance
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/up` | Liveness probe. |
+| `GET` | `/setup` | Configuration snapshot (safe subset). |
+| `POST` | `/push` | Submit a conversion job / pipeline. |
+| `GET` | `/results` | List recent job results. |
+| `GET` | `/results/{id}` | Retrieve a specific job result. |
+| `GET` | `/tasks` | Return the task catalogue. |
+| `GET` | `/workers` | Per-worker live status. |
+| `GET` | `/storage` | Browse the configured object store. |
+| `GET` | `/webhooks` | Webhook configuration + recent deliveries. |
+| `GET` | `/tail` | Recent server log lines. |
+
+Detail pages for every endpoint are generated from the [OpenAPI spec](https://github.com/screenjson/docs/blob/main/api-reference/greenlight/openapi.json) — see the **Greenlight endpoints** group in this sidebar.
+
+## Authentication
+
+Three optional schemes:
+
+- **Basic auth** — set `GREENLIGHT_USERNAME` / `GREENLIGHT_PASSWORD`.
+- **Bearer token** — set `SHARED_API_SECRET=1` and `SHARED_API_KEY=<token>`; clients send `Authorization: Bearer <token>`.
+- **Open** — leave all of the above empty. Useful behind a trusted network gateway.
+
+## Content-Type
+
+All POST payloads are `application/json` unless otherwise noted.
+
+## Error shape
+
+4xx / 5xx responses are JSON with at least:
+
+```json
+{ "error": "human-readable message" }
+```
+
+Some endpoints additionally return validation failure detail.
+
+## Rate limiting
+
+The built-in server does not rate-limit. Enforce limits at the reverse proxy layer. Internal worker concurrency is governed by `MAX_WORKERS` (default `4` per replica).
+
+## Idempotency
+
+The `/push` endpoint is **not** idempotent. Submitting the same payload twice enqueues two jobs. Use `document_id` to correlate server-side if you need dedup semantics.

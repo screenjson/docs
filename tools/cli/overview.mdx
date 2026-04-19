@@ -1,0 +1,50 @@
+---
+title: Overview
+description: screenjson-cli is the full, commercial ScreenJSON toolchain — every format, validation, encryption, REST API.
+---
+
+`screenjson-cli` is the full, production-grade ScreenJSON toolchain. One Go binary exposes nine subcommands.
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| [`convert`](/tools/cli/convert) | Read **FDX**, **Fountain**, **FadeIn**, or **PDF** → emit ScreenJSON (or YAML). |
+| [`export`](/tools/cli/export) | Read ScreenJSON → emit **FDX**, **Fountain**, **FadeIn**, **PDF**, JSON, or YAML. |
+| [`validate`](/tools/cli/validate) | Check against the ScreenJSON JSON Schema. |
+| [`encrypt`](/tools/cli/encrypt) | AES-256-CTR encrypt every text run. |
+| [`decrypt`](/tools/cli/decrypt) | Decrypt an encrypted ScreenJSON document. |
+| [`serve`](/tools/cli/serve) | Start the REST API server. |
+| [`formats`](/tools/cli/formats) | List supported formats and their capabilities. |
+| `version` | Print version. |
+| `help` | Print top-level help. |
+
+## Supported formats
+
+| Format | Extensions | Import | Export |
+|---|---|---|---|
+| Final Draft | `.fdx` | ✅ | ✅ |
+| FadeIn | `.fadein` | ✅ | ✅ |
+| Fountain | `.fountain`, `.spmd` | ✅ | ✅ |
+| PDF | `.pdf` | ✅ (via Poppler) | ✅ |
+| ScreenJSON | `.json` | ✅ | ✅ |
+| YAML | `.yaml`, `.yml` | ✅ | ✅ |
+| Celtx | `.celtx` | — | — (placeholder) |
+
+## Global patterns
+
+Every command accepts long and short forms for input and output paths:
+
+- `-i` · `--input <path>`
+- `-o` · `--output <path>`
+- `-f` · `--format <name>` (where applicable)
+- `-q` · `--quiet`
+- `--verbose`
+
+## REST API
+
+`screenjson serve` exposes the same engine over HTTP. See [API Reference → screenjson-cli server](/api-reference/cli/introduction).
+
+## License
+
+Commercial — contact `hello@screenjson.com`. For the free OSS subset (writer-format import only), use [`screenjson-export`](/tools/export/overview).

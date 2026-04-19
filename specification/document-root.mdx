@@ -1,0 +1,72 @@
+---
+title: Document root
+description: Required and optional properties at the top of a ScreenJSON document.
+---
+
+## Required
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | [uuid](/specification/shared-types#uuid) | RFC 4122 document identifier. |
+| `version` | string | Semver. Pins the schema version the document was authored against. |
+| `title` | [name](/specification/shared-types#name) | Document title, language-keyed. |
+| `lang` | [lang](/specification/shared-types#lang) | Primary BCP 47 language tag. |
+| `charset` | string | IANA character set label. Default `utf-8`. |
+| `dir` | enum | `ltr` or `rtl`. |
+| `authors` | array[[author](/specification/authors)] | Must have at least one. |
+| `document` | object | The screenplay container — see below. |
+
+## Optional
+
+| Field | Type | Description |
+|---|---|---|
+| `generator` | object | Tool that produced the file: `{ name, version, meta? }`. |
+| `locale` | string | BCP 47 locale — e.g. `en-US`. Default `en-US`. |
+| `contributors` | array | See [Authors & contributors](/specification/authors). |
+| `characters` | array[[character](/specification/characters)] | Character index. |
+| `colors` | array[color] | Reusable named colours. |
+| `sources` | array | Source works this screenplay is based on: `{ id, type, title, meta? }`. |
+| `registrations` | array | WGA / guild / national registry records. |
+| `revisions` | array[[revision](/specification/revisions-notes#revisions)] | Document-level revision history. |
+| `encrypt` | object \| null | Default [encryption](/specification/encryption) parameters. |
+| `license` | object \| null | `{ id, ref?, meta? }`. |
+| `taggable` | slug[] | Master index of every tag slug used in the document. Helper; optional. |
+| `genre` | slug[] | Genre tags. |
+| `themes` | slug[] | Thematic tags. |
+| `logline` | [text](/specification/shared-types#text) | One-sentence summary. |
+| `analysis` | object | See [Analysis](/specification/analysis). |
+
+## `document` container
+
+| Field | Type | Description |
+|---|---|---|
+| `cover` | object | Cover page metadata. **Required.** |
+| `layout` | object | Optional rendering rules. See [Layout](/specification/layout). |
+| `bookmarks` | array | Stable shortcuts into scenes. |
+| `scenes` | array[[scene](/specification/scenes)] | One or more scenes. **Required.** |
+| `meta` | [meta](/specification/shared-types#meta) | Extension. |
+
+### `cover`
+
+| Field | Type | Description |
+|---|---|---|
+| `title` | [name](/specification/shared-types#name) | **Required.** |
+| `authors` | uuid[] | Author ids shown on cover. **Required.** |
+| `sources` | uuid[] | Source ids shown on cover. |
+| `extra` | [text](/specification/shared-types#text) | Free text. |
+| `meta` | meta | Extension. |
+
+### `bookmarks`
+
+Stable shortcuts into scenes:
+
+| Field | Type |
+|---|---|
+| `id` | uuid |
+| `scene` | uuid |
+| `element` | uuid |
+| `title` | [text](/specification/shared-types#text) |
+| `desc` | text |
+| `meta` | meta |
+
+All fields except `desc` and `meta` are required.

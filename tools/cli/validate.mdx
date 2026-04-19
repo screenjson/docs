@@ -1,0 +1,63 @@
+---
+title: validate
+description: Validate a ScreenJSON document against the schema.
+---
+
+```
+screenjson validate -i <input.json> [options]
+```
+
+Validates a ScreenJSON document against the [ScreenJSON JSON Schema](https://screenjson.com/schema.json). Prints a report and returns an exit code.
+
+## Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `-i` · `--input <path>` | — | ScreenJSON file to validate. **Required.** |
+| `--strict` | `false` | Exit with code `1` when the document has validation errors. |
+| `--verbose` | `false` | Print the schema version used. |
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Document is valid, **or** invalid but `--strict` was not set. |
+| `1` | Document is invalid **and** `--strict` was set, or a runtime error occurred. |
+
+## Examples
+
+```bash
+# Basic check, always returns 0
+screenjson validate -i screenplay.json
+
+# CI-friendly: fail on invalid documents
+screenjson validate -i screenplay.json --strict
+
+# Verbose
+screenjson validate -i screenplay.json --verbose
+
+# Batch over a folder (bash)
+for f in screenplays/*.json; do
+  screenjson validate -i "$f" --strict || echo "INVALID: $f"
+done
+```
+
+## Output format
+
+Success:
+
+```
+✓ Document is valid
+```
+
+Failure (exit `1` under `--strict`):
+
+```
+✗ Document is invalid
+  - /document/scenes/0/heading: missing required property: setting
+  - /authors: array must have at least 1 item
+```
+
+## Validator used
+
+The validator uses the schema version bundled with the binary. The current version is reported with `--verbose`. The same schema is available at [`https://screenjson.com/schema.json`](https://screenjson.com/schema.json) for use with any external validator (Ajv, jsonschema, gojsonschema).

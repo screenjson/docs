@@ -1,0 +1,84 @@
+---
+title: Webhooks
+description: Outbound HTTP webhooks fire on job lifecycle events.
+---
+
+Greenlight fires outbound HTTP webhooks for every job lifecycle event. Both per-job and deployment-wide defaults are supported.
+
+## Configuration
+
+### Deployment defaults
+
+Apply to every job.
+
+| Variable | Description |
+|---|---|
+| `DEFAULT_WEBHOOKS` | Comma-separated named webhook ids. |
+| `DEFAULT_WEBHOOK_URLS` | Comma-separated raw URLs. |
+
+### Per-job
+
+On submission, pass a `webhook` field. Combined additively with the defaults.
+
+```json
+{ "webhook": "https://example.com/hooks/greenlight" }
+```
+
+### Request behaviour
+
+| Variable | Default | Description |
+|---|---|---|
+| `WEBHOOK_TIMEOUT` | `15s` | Per-request timeout. |
+| `WEBHOOK_MAX_RETRY` | `4` | Max retries before giving up. |
+| `WEBHOOK_RETRY_MIN_WAIT` | `1s` | Initial back-off. |
+| `WEBHOOK_RETRY_MAX_WAIT` | `30s` | Max back-off. |
+| `WEBHOOK_SECRET` | `secret` | HMAC-SHA256 signing secret. |
+
+## Event payload
+
+Each POST carries `Content-Type: application/json`. Payload shape:
+
+```json
+{
+  "event":       "job.completed",
+  "job_id":      "j_01HAYP...",
+  "document_id": "12345",
+  "tenant_id":   "acme",
+  "tasks":       ["convert-fdx-to-screenjson", "validate-screenjson"],
+  "status":      "success",
+  "started_at":  "2026-01-14T10:30:00Z",
+  "finished_at": "2026-01-14T10:30:12Z",
+  "outputs":     [
+    { "task": "convert-fdx-to-screenjson", "keys": ["screenplays/output/script/json/script.json"] },
+    { "task": "validate-screenjson",       "keys": ["screenplays/output/script/validation/script_validation.json"] }
+  ],
+  "error":       null
+}
+```
+
+## Event kinds
+
+| `event` | Fires |
+|---|---|
+| `job.queued` | Immediately after submission. |
+| `job.started` | When a worker claims the job. |
+| `job.progress` | Between tasks. Body includes the completed task list so far. |
+| `job.completed` | On successful pipeline finish. |
+| `job.failed` | On any task failure. `error` is populated. |
+
+## Signing
+
+Every request carries an `X-Greenlight-Signature: sha256=<hex>` header over the raw request body, using `WEBHOOK_SECRET`. Verify in your receiver:
+
+```js
+import crypto from 'node:crypto';
+
+function verify(rawBody, signatureHeader, secret) {
+  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signatureHeader));
+}
+```
+
+## Webhook status
+
+The [`GET /webhooks`](/api-reference/greenlight/endpoint/get-webhooks) endpoint returns the current webhook configuration and recent delivery attempts.

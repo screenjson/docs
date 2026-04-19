@@ -1,0 +1,83 @@
+---
+title: Analysis
+description: Optional derived data — embeddings, passages, summaries — attached without mutating the canonical document.
+---
+
+The `analysis` block carries derived data for retrieval and AI workflows. It is **optional** and **discardable**: a document without analysis is still canonical.
+
+## Shape
+
+```json
+{
+  "analysis": {
+    "embeddings": { "<uuid>": [ /* embeddings */ ] },
+    "passages":   [ /* passages */ ],
+    "summaries":  [ /* summaries */ ],
+    "settings":   { /* how this was produced */ }
+  }
+}
+```
+
+## `analysis.embeddings`
+
+A map keyed by the **UUID of the target** (scene, element, or character), whose value is an array of one or more embedding records:
+
+```json
+{
+  "id":         "<embedding-uuid>",
+  "model":      "text-embedding-3-large",
+  "dimensions": 1536,
+  "values":     [0.023, -0.041, ...],
+  "source":     "text",
+  "lang":       "en",
+  "tokens":     420,
+  "created":    "2026-01-14T10:30:00Z"
+}
+```
+
+**`source`** enum: `name` · `text` · `desc` · `heading` · `composite`.
+
+## `analysis.passages`
+
+Retrieval-sized text chunks keyed back to their source:
+
+```json
+{
+  "id":       "<uuid>",
+  "scene":    "<scene-uuid>",
+  "elements": ["<uuid>", "<uuid>"],
+  "text":     { "en": "..." },
+  "tokens":   256,
+  "overlap":  32
+}
+```
+
+## `analysis.summaries`
+
+Document- or scene-scoped summaries:
+
+```json
+{
+  "id":        "<uuid>",
+  "scope":     "scene",
+  "target":    "<scene-uuid>",
+  "generated": true,
+  "model":     "claude-opus-4-7",
+  "text":      { "en": "..." },
+  "created":   "2026-01-14T10:45:00Z"
+}
+```
+
+**`scope`** enum: `document` · `scene`.
+
+## `analysis.settings`
+
+Records how the analysis was produced, for reproducibility:
+
+| Field | Type | Description |
+|---|---|---|
+| `model` | string (≤100) | Embedding or summary model identifier. |
+| `size` | integer ≥1 | Chunk size. Default `512`. |
+| `overlap` | integer ≥0 | Chunk overlap in tokens. Default `64`. |
+| `tokeniser` | string (≤50) | Tokeniser identifier (e.g. `cl100k`). |
+| `meta` | meta map | Free-form string key/value extension. |

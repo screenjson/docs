@@ -1,0 +1,163 @@
+---
+title: Task catalogue
+description: Every task Greenlight ships with, from config/tasks.yml.
+---
+
+Tasks are declared in `config/tasks.yml`. Each task records its accepted input extensions, the binary it requires, the handler used to run it, the output directory, and the output filename template.
+
+## Import
+
+### `convert-fdx-to-screenjson`
+Converts Final Draft (`.fdx`) to ScreenJSON.
+
+| Field | Value |
+|---|---|
+| Accepts | `.fdx` |
+| Requires | `/usr/local/bin/screenjson` |
+| Handler | `greenlight.convert` (`format: fdx`) |
+| Output dir | `json` |
+| Output | `{stem}.json` |
+
+### `convert-fountain-to-screenjson`
+Converts Fountain (`.fountain`) plain-text screenplay to ScreenJSON.
+
+| Field | Value |
+|---|---|
+| Accepts | `.fountain` |
+| Requires | `screenjson` |
+| Handler | `greenlight.convert` (`format: fountain`) |
+| Output dir | `json` |
+| Output | `{stem}.json` |
+
+### `convert-fadein-to-screenjson`
+Converts FadeIn Pro (`.fadein`) to ScreenJSON.
+
+| Field | Value |
+|---|---|
+| Accepts | `.fadein` |
+| Requires | `screenjson` |
+| Handler | `greenlight.convert` (`format: fadein`) |
+| Output dir | `json` |
+| Output | `{stem}.json` |
+
+### `convert-pdf-to-screenjson`
+Extracts screenplay structure from a PDF via Poppler and converts to ScreenJSON. Best-effort for scanned / image PDFs.
+
+| Field | Value |
+|---|---|
+| Accepts | `.pdf` |
+| Requires | `screenjson`, `pdftohtml` |
+| Handler | `greenlight.convert` (`format: pdf`) |
+| Output dir | `json` |
+| Output | `{stem}.json` |
+
+## Export
+
+### `export-to-fdx`
+
+| Field | Value |
+|---|---|
+| Accepts | `.json`, `.yaml`, `.yml` |
+| Handler | `greenlight.export` (`format: fdx`) |
+| Output dir | `fdx` |
+| Output | `{stem}.fdx` |
+
+### `export-to-fountain`
+
+| Field | Value |
+|---|---|
+| Accepts | `.json`, `.yaml`, `.yml` |
+| Handler | `greenlight.export` (`format: fountain`) |
+| Output dir | `fountain` |
+| Output | `{stem}.fountain` |
+
+### `export-to-fadein`
+
+| Field | Value |
+|---|---|
+| Accepts | `.json`, `.yaml`, `.yml` |
+| Handler | `greenlight.export` (`format: fadein`) |
+| Output dir | `fadein` |
+| Output | `{stem}.fadein` |
+
+### `export-to-pdf`
+Renders the document as a screenplay PDF using the native encoder.
+
+| Field | Value |
+|---|---|
+| Accepts | `.json`, `.yaml`, `.yml` |
+| Handler | `greenlight.export` (`format: pdf`, `paper_size: letter`, `font: courier`) |
+| Output dir | `pdf` |
+| Output | `{stem}.pdf` |
+
+## Validation
+
+### `validate-screenjson`
+Schema-checks a document and emits a JSON report.
+
+| Field | Value |
+|---|---|
+| Accepts | `.json` |
+| Handler | `greenlight.validate` |
+| Output dir | `validation` |
+| Output | `{stem}_validation.json` |
+
+## Encryption
+
+### `encrypt-screenjson`
+AES-256 encrypts every text run. Requires an `encrypt_key` job variable.
+
+| Field | Value |
+|---|---|
+| Accepts | `.json` |
+| Handler | `greenlight.encrypt` |
+| Output dir | `encrypted` |
+| Output | `{stem}_encrypted.json` |
+| Required `vars` | `encrypt_key` |
+
+### `decrypt-screenjson`
+Decrypts. Requires the same `encrypt_key` used to encrypt.
+
+| Field | Value |
+|---|---|
+| Accepts | `.json` |
+| Handler | `greenlight.decrypt` |
+| Output dir | `decrypted` |
+| Output | `{stem}_decrypted.json` |
+| Required `vars` | `encrypt_key` |
+
+## Packaging
+
+### `zip-output`
+ZIPs the entire output directory.
+
+| Field | Value |
+|---|---|
+| Accepts | any |
+| Requires | `/usr/bin/zip` |
+| Handler | `cli` |
+| Command | `cd {output_dir} && zip -r package.zip . -x package.zip` |
+| Output | `package.zip` |
+
+## Adding tasks
+
+`config/tasks.yml` is loaded on boot. New entries follow this schema:
+
+```yaml
+- name: my-task
+  description: Short label
+  human: Longer explanation shown in the UI
+  icon: mdi:something
+  accept: [.json]
+  requires:
+    - { type: binary, path: /usr/local/bin/screenjson, name: screenjson }
+  handler: greenlight.convert  # or cli
+  output_dir: output
+  params: { format: fdx }
+  job_vars: [optional_var_names]
+  cmd: "shell command (only when handler is cli)"
+  output:
+    - "{stem}.ext"
+```
+
+Restart the service to pick up changes.

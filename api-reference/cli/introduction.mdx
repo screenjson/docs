@@ -1,0 +1,67 @@
+---
+title: Introduction
+description: The REST API exposed by screenjson-cli when run in server mode.
+---
+
+`screenjson serve` starts an HTTP server that wraps the same conversion, export, and validation engine as the CLI. Use it from applications, serverless functions, or a frontend that needs to convert a screenplay without shelling out.
+
+## Start a server
+
+```bash
+screenjson serve --host 0.0.0.0 --port 8080
+```
+
+Or with Docker:
+
+```bash
+docker run --rm -p 8080:8080 screenjson/cli serve --port 8080
+```
+
+See [`screenjson serve`](/tools/cli/serve) for the full flag list.
+
+## Base URLs
+
+| Environment | URL |
+|---|---|
+| Local | `http://localhost:8080` |
+| Public demo | `https://api.try.screenjson.com` |
+
+## Endpoints at a glance
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/` | Service descriptor, queue metrics, endpoint catalogue. |
+| `GET` | `/health` | Health check with per-service status. |
+| `GET` | `/formats` | List every supported format. |
+| `POST` | `/convert` | Upload a file, receive ScreenJSON. |
+| `POST` | `/export` | POST a ScreenJSON document, receive an exported file. |
+| `POST` | `/validate` | POST a ScreenJSON document, receive a validation report. |
+
+Detail pages for every endpoint are generated from the [OpenAPI spec](https://github.com/screenjson/docs/blob/main/api-reference/cli/openapi.json) — see the **screenjson-cli endpoints** group in this sidebar.
+
+## Request limits
+
+- `/convert` and `/export`: **50 MB** request body.
+- `/validate`: **10 MB** request body.
+
+## CORS
+
+The server emits a permissive policy:
+
+```
+Access-Control-Allow-Origin:  *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+```
+
+## Error shape
+
+All 4xx / 5xx responses are JSON:
+
+```json
+{ "error": "human-readable message" }
+```
+
+## Authentication
+
+The vanilla server exposes no authentication. For production deployments, put it behind an API gateway (AWS API Gateway, Cloudflare, nginx) and enforce auth there, or use [Greenlight](/tools/greenlight/overview) which bundles bearer token auth.

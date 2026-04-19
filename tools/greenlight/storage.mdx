@@ -1,0 +1,108 @@
+---
+title: Storage
+description: S3 / MinIO / noop storage backends and key layout.
+---
+
+Greenlight reads source files from an S3-compatible bucket, writes results back to an output bucket, and supports three backend drivers.
+
+## Backends
+
+### `minio` (default)
+
+For local dev and on-prem deployments. `docker-compose` boots MinIO automatically and seeds matching credentials.
+
+```bash
+STORAGE_BACKEND=minio
+S3_ENDPOINT=http://minio:9000
+S3_FORCE_PATH_STYLE=true
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
+```
+
+### `s3`
+
+AWS S3 or any other S3-compatible service.
+
+```bash
+STORAGE_BACKEND=s3
+S3_ENDPOINT=
+S3_REGION=us-west-2
+S3_USE_SSL=true
+S3_FORCE_PATH_STYLE=false
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+```
+
+Leave `S3_ENDPOINT` blank for AWS S3 proper. Set `S3_FORCE_PATH_STYLE=true` for any third-party service that requires path-style addressing.
+
+### `noop`
+
+Disables storage entirely. Useful for pure-stdin / stdout pipelines or integration tests.
+
+```bash
+STORAGE_BACKEND=noop
+```
+
+## Key layout
+
+### Input
+
+```
+{S3_INPUT_BUCKET}/{S3_INPUT_PREFIX}/...your files...
+```
+
+Default: `greenlight/screenplays/input/`.
+
+Submission references the full object key relative to the bucket:
+
+```json
+{ "input_key": "screenplays/input/script.fdx" }
+```
+
+### Output
+
+```
+{S3_OUTPUT_BUCKET}/{output_key}/{task.output_dir}/{stem}.{ext}
+```
+
+`output_key` is supplied per-job; `task.output_dir` is defined per task in `config/tasks.yml`.
+
+Example, submitting with `output_key: "screenplays/output/script-v1"` and `tasks: ["convert-fdx-to-screenjson", "validate-screenjson"]` produces:
+
+```
+greenlight/screenplays/output/script-v1/json/script.json
+greenlight/screenplays/output/script-v1/validation/script_validation.json
+```
+
+## Browsing storage
+
+The service exposes [`GET /storage`](/api-reference/greenlight/endpoint/list-storage) to list buckets and objects directly. Convenient for debugging but usually not exposed publicly — put it behind auth.
+
+## IAM (AWS S3)
+
+Minimum permissions for a dedicated service account:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:ListBucket", "s3:DeleteObject"],
+      "Resource": [
+        "arn:aws:s3:::<input-bucket>",
+        "arn:aws:s3:::<input-bucket>/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:PutObject"],
+      "Resource": "arn:aws:s3:::<output-bucket>/*"
+    }
+  ]
+}
+```
+
+## Large files
+
+Default `JOB_TIMEOUT=30m` handles multi-hundred-megabyte PDFs comfortably. For unusually large source material, raise the timeout and scale worker replicas horizontally; no single worker is sharded per task.

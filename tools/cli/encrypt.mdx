@@ -1,0 +1,54 @@
+---
+title: encrypt
+description: Encrypt content runs in a ScreenJSON document with AES-256-CTR.
+---
+
+```
+screenjson encrypt -i <input.json> -o <output.json> --key <secret>
+```
+
+Encrypts every text run in a ScreenJSON document using AES-256-CTR with SHA-256 key derivation. Structure, UUIDs, timestamps, and metadata remain visible.
+
+## Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `-i` · `--input <path>` | — | Input ScreenJSON file. **Required.** |
+| `-o` · `--output <path>` | — | Output path. **Required.** |
+| `--key <secret>` | `$SCREENJSON_ENCRYPT_KEY` | Shared secret — at least 10 characters. |
+
+## Cipher details
+
+- **Cipher:** AES-256-CTR
+- **Key derivation:** SHA-256 of the shared secret
+- **Binary encoding:** `hex` (default), overridable via `document.encrypt.encoding` on the output. Valid values: `hex`, `base16`, `base32`, `base64`, `ascii85`.
+
+## What is encrypted
+
+Every value in a `text` language map on every element; plus notes, slugline descriptions, character descriptions, loglines, cover extras. See [Encryption](/concepts/encryption).
+
+## What is not
+
+UUIDs, timestamps, tag arrays, character canonical names, `meta`, and everything under `analysis` — so indexers, schedulers, and breakdown tools can still read structure without decrypting content.
+
+## Examples
+
+```bash
+# Explicit key
+screenjson encrypt -i plain.json -o cipher.json --key "AtLeast10Chars!"
+
+# Key from environment
+export SCREENJSON_ENCRYPT_KEY="AtLeast10Chars!"
+screenjson encrypt -i plain.json -o cipher.json
+
+# Encrypt at convert time (one-shot)
+screenjson convert -i script.fdx --encrypt "AtLeast10Chars!" -o cipher.json
+```
+
+## Errors
+
+| Error | Meaning |
+|---|---|
+| `Error: encryption key required` | No `--key` provided and `SCREENJSON_ENCRYPT_KEY` is unset. |
+| `Error parsing JSON` | Input is not valid ScreenJSON. |
+| `Error encrypting: key too short` | Shared secret is less than 10 characters. |

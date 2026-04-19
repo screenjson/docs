@@ -1,0 +1,67 @@
+---
+title: Encryption
+description: AES-256-CTR encryption of text runs. Structure, UUIDs, and metadata stay visible.
+---
+
+ScreenJSON supports confidentiality without sacrificing structural introspection: **only text runs are encrypted**. UUIDs, timestamps, scene counts, character lists, revision labels, and `meta` stay in plain text.
+
+## `encrypt` object
+
+```json
+{
+  "encrypt": {
+    "cipher":   "aes-256-ctr",
+    "hash":     "sha256",
+    "encoding": "hex",
+    "meta":     {}
+  }
+}
+```
+
+| Field | Type | Required | Default | Values |
+|---|---|---|---|---|
+| `cipher` | string | ✓ | `aes-256-ctr` | Any symmetric cipher the tooling supports. |
+| `hash` | string | ✓ | `sha256` | Hash used for key derivation. |
+| `encoding` | enum | ✓ | `hex` | `hex`, `base16`, `base32`, `base64`, `ascii85`. |
+| `meta` | meta | — | `{}` | Free-form extension. |
+
+## Scope
+
+- **Document-level** `encrypt` (on the document root) applies to every element that does not set its own.
+- **Element-level** `encrypt` on an individual element overrides the root.
+
+## What is encrypted
+
+- Every value in a `text` language map on every element (action, dialogue, parenthetical, shot, transition, general, cue).
+- `note.text`.
+- Slugline `desc`.
+- Character `desc`.
+- Logline.
+- Cover `extra`.
+- Any other `text` map inside the document tree that sits under a scope with encryption enabled.
+
+## What is not
+
+- All UUIDs.
+- All timestamps (`created`, `modified`, `updated`).
+- Tag arrays — `props`, `sfx`, `locations`, `genre`, `themes`, every scene taxonomy, plus `taggable`.
+- Character canonical `name` and `aliases`.
+- `meta` maps.
+- Everything under `analysis` — embeddings, passages, summaries.
+
+## Key derivation
+
+The encryption key is derived from the shared secret via a single pass of the declared `hash`. Default: SHA-256.
+
+Keys must be **at least 10 characters**. Shorter keys are rejected by `screenjson encrypt`.
+
+## CLI entry points
+
+- [`screenjson encrypt`](/tools/cli/encrypt)
+- [`screenjson decrypt`](/tools/cli/decrypt)
+- [`screenjson convert --encrypt <key>`](/tools/cli/convert)
+- [`screenjson export --decrypt <key>`](/tools/cli/export)
+
+## Environment variable
+
+`SCREENJSON_ENCRYPT_KEY` is read by every CLI command that takes a `--key` / `--encrypt` / `--decrypt` flag when no explicit value is provided.

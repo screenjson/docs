@@ -1,0 +1,58 @@
+---
+title: Language maps
+description: Every user-facing text field in ScreenJSON is keyed by BCP 47 language tag.
+---
+
+Every user-facing text field in ScreenJSON is a **map** keyed by BCP 47 language tag, not a plain string.
+
+```json
+{
+  "text": {
+    "en": "We have ninety seconds.",
+    "fr": "Nous avons quatre-vingt-dix secondes.",
+    "ja": "九十秒しかない。"
+  }
+}
+```
+
+## Two map types
+
+| Type | Max length per value | Where it's used |
+|---|---|---|
+| `name` | 255 characters | Short identifiers — titles, display names, cover labels. |
+| `text` | 10,000 characters | Long content — dialogue, action, descriptions, notes. |
+
+## Key pattern
+
+Both types use the BCP 47 regex from the schema:
+
+```
+^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$
+```
+
+Valid examples: `en`, `en-GB`, `fr-CA`, `zh-Hant`, `sr-Latn-RS`.
+
+## Picking text at read time
+
+```ts
+function pickText(
+  map: Record<string, string>,
+  preferred: string,
+  fallback = 'en',
+): string {
+  return map[preferred] ?? map[fallback] ?? Object.values(map)[0] ?? '';
+}
+```
+
+## Where maps appear
+
+- Root: `title`, `logline`
+- Cover: `title`, `extra`
+- Character: `desc`
+- Source: `title`
+- Slugline: `desc`
+- Element: `text` on `action`, `dialogue`, `parenthetical`, `shot`, `transition`, `general`
+- Note: `text`
+- Bookmark: `title`, `desc`
+- Ribbon: `text`
+- Summary / passage: `text`

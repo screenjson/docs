@@ -1,0 +1,55 @@
+---
+title: Encryption
+description: AES-256-CTR encryption of text runs. Structure, UUIDs, and metadata stay visible.
+---
+
+ScreenJSON supports confidentiality without sacrificing structural introspection: **only text runs are encrypted**. UUIDs, timestamps, scene counts, character lists, revision labels, and `meta` stay in plain text.
+
+## The `encrypt` block
+
+```json
+{
+  "encrypt": {
+    "cipher":   "aes-256-ctr",
+    "hash":     "sha256",
+    "encoding": "hex"
+  }
+}
+```
+
+| Field | Default | Values |
+|---|---|---|
+| `cipher` | `aes-256-ctr` | Any symmetric cipher string the tooling supports. |
+| `hash` | `sha256` | Hash used for key derivation. |
+| `encoding` | `hex` | `hex` · `base16` · `base32` · `base64` · `ascii85`. |
+| `meta` | `{}` | Free-form extension. |
+
+## Key derivation
+
+The encryption key is derived from a shared secret via a single pass of the declared `hash` (default SHA-256). The key must be at least **10 characters** long.
+
+## Scope
+
+- **Document-level** `encrypt` (on the document root) applies to every element that doesn't set its own.
+- **Element-level** `encrypt` on an individual element overrides the root.
+
+## What gets encrypted
+
+- Every value in a `text` language map on every element.
+- Every value in `note.text`, `logline`, cover `extra`, character `desc`, slugline `desc`, scene-level summary text.
+
+## What does not
+
+- UUIDs (document, scene, element, character, note, revision, bookmark).
+- Timestamps (`created`, `modified`).
+- Tag arrays (`props`, `sfx`, `locations`, `genre`, `themes`, etc.).
+- Character canonical `name` and `aliases`.
+- `meta` maps.
+- Everything under `analysis` (embeddings, passages, summaries).
+
+## CLI entry points
+
+- [`screenjson encrypt`](/tools/cli/encrypt) — full-document encryption pass.
+- [`screenjson decrypt`](/tools/cli/decrypt) — matching decrypt.
+- [`screenjson convert --encrypt <key>`](/tools/cli/convert) — encrypt at convert time.
+- [`screenjson export --decrypt <key>`](/tools/cli/export) — decrypt at export time.

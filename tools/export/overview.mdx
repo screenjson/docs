@@ -1,0 +1,46 @@
+---
+title: Overview
+sidebarTitle: Overview
+description: screenjson-export is the free, open-source reference CLI. FDX / Fountain / FadeIn → ScreenJSON.
+---
+
+`screenjson-export` is the minimal, open-source subset of the ScreenJSON CLI. It reads three writer formats and writes ScreenJSON.
+
+- **Final Draft** — `.fdx`
+- **Fountain** — `.fountain`, `.spmd`
+- **FadeIn** — `.fadein`
+
+<Info>
+MIT-licensed, single static binary, no CGO. [Source on GitHub](https://github.com/screenjson/screenjson-export).
+</Info>
+
+## What it does
+
+- Reads FDX, Fountain, or FadeIn from disk.
+- Emits valid ScreenJSON on stdout or to a file.
+- Pretty-prints JSON by default.
+- Sets the primary language tag via `--lang`.
+
+## What it does **not** do
+
+- No PDF import.
+- No export to FDX / Fountain / FadeIn / PDF.
+- No schema validation.
+- No encryption.
+- No server mode, no storage drivers, no MCP.
+
+For any of the above, use [`screenjson-cli`](/tools/cli/overview).
+
+## Latest release
+
+v1.0.0 — [release page](https://github.com/screenjson/screenjson-export/releases/tag/v1.0.0).
+
+Six platform binaries + Docker image + `checksums.txt`.
+
+## Source-level summary
+
+| Dependency | Why |
+|---|---|
+| `github.com/google/uuid` | RFC 4122 UUID generation for characters, scenes, elements. |
+
+No other external Go module. Format decoders live in `internal/formats/{fdx,fountain,fadein}/` and the shared model is in `internal/model/`.

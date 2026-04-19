@@ -1,0 +1,55 @@
+---
+title: Overview
+description: screenjson-ui is an embeddable JavaScript viewer for ScreenJSON documents.
+---
+
+`screenjson-ui` renders a ScreenJSON document as a pixel-accurate, studio-quality screenplay in the browser.
+
+## Features
+
+- **Hollywood / Warner Bros / Final Draft formatting.** Courier Prime 12pt, 60 lines per page, industry-standard margins.
+- **Dark and light themes** with persistence.
+- **Multi-language** — switch the rendered language at runtime.
+- **Virtual scrolling** for 300+ page documents.
+- **Responsive** — 400 px mobile to 1200 px+ desktop.
+- **Encryption** — decrypt in-browser with a password.
+- **Bookmarks and notes** — stored in `localStorage`.
+- **Metadata panel** — character list, scene index, SFX / VFX / props / wardrobe breakdowns.
+
+## Distributions
+
+| Distribution | Use |
+|---|---|
+| **npm** | `npm install screenjson-ui` — ESM module, TypeScript types. |
+| **CDN script tag** | Drop-in, no build — `https://cdn.screenjson.com/ui/screenjson-ui.js`. |
+| **Svelte component** | Native `ScreenJSONViewer` component. |
+
+## Entry points
+
+| Import | What it is |
+|---|---|
+| `ScreenJSONUI` (default export) | The embed class — pass a config, it mounts the viewer into a container. |
+| `ScreenJSONViewer` | Svelte component. |
+| `ViewerVirtual`, `Page`, `Menu`, `MetadataPanel`, `ErrorDisplay`, `PasswordModal`, `VirtualScroller` | Individual components for custom layouts. |
+| `DocumentLoader`, `loadFromUrl` | Fetch + parse helpers. |
+| `Paginator`, `paginate`, `createPaginator` | Client-side pagination. |
+| `validateDocument`, `isScreenJSONDocument` | Shape checks. |
+| `hasEncryptedContent`, `decryptDocument`, `decryptText` | Encryption helpers. |
+| `themeStore`, `settingsStore`, `documentStore` | Svelte stores. |
+
+## Rendering standard
+
+Matches the Warner Bros / Final Draft convention:
+
+- **Paper:** US Letter (8.5" × 11")
+- **Font:** Courier Prime, 12pt
+- **Lines per page:** 60
+- **Margins:** Action 1.7" L / 1.1" R · Dialogue 2.7" L / 2.4" R · Character 4.1" L · Parenthetical 3.4" L / 3.1" R · Transition 6.0" L
+
+## Browser support
+
+Chrome 90+ · Firefox 90+ · Safari 14+ · Edge 90+.
+
+## License
+
+MIT. The viewer is open source; see [GitHub](https://github.com/screenjson/screenjson-ui).

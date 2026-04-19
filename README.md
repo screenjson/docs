@@ -1,43 +1,52 @@
-# Mintlify Starter Kit
+# ScreenJSON Documentation
 
-Use the starter kit to get your docs deployed and ready to customize.
+Source for [docs.screenjson.com](https://docs.screenjson.com).
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+Built with [Mintlify](https://mintlify.com). Pushes to `main` auto-deploy.
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
-
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
-
-## Development
-
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
+## Structure
 
 ```
-npm i -g mint
+docs.json                          Mintlify site config
+index.mdx                          Tab: Guides → Introduction
+quickstart.mdx                     Tab: Guides → Quickstart
+install.mdx                        Tab: Guides → Install
+concepts/                          Tab: Guides → Core concepts
+tools/
+  export/                          Tab: Tools → screenjson-export
+  cli/                             Tab: Tools → screenjson-cli
+  ui/                              Tab: Tools → screenjson-ui
+  greenlight/                      Tab: Tools → Greenlight
+specification/                     Tab: Specification (schema reference)
+api-reference/
+  cli/openapi.json                 OpenAPI for screenjson serve
+  cli/introduction.mdx             Tab: API Reference → screenjson-cli server
+  greenlight/openapi.json          OpenAPI for Greenlight
+  greenlight/introduction.mdx      Tab: API Reference → Greenlight service
+logo/                              Logo SVGs (light + dark)
+favicon.svg                        Favicon
 ```
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
+Mintlify auto-generates endpoint pages under the `endpoint/` subdirectories from each `openapi.json`.
 
+## Local development
+
+```bash
+npm install -g mintlify
+mintlify dev
 ```
-mint dev
-```
 
-View your local preview at `http://localhost:3000`.
+Runs a preview at `http://localhost:3000` with hot reload.
 
-## Publishing changes
+## Adding a page
 
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
+1. Create an `.mdx` file under the appropriate directory.
+2. Add its path to the matching `pages:` array in `docs.json`.
+3. Commit and push — Mintlify deploys on merge to `main`.
 
-## Need help?
+## Updating the OpenAPI specs
 
-### Troubleshooting
+- `api-reference/cli/openapi.json` — update when `screenjson serve` endpoints change. Source of truth is [`screenjson-cli/internal/server/server.go`](https://github.com/screenjson/screenjson-cli).
+- `api-reference/greenlight/openapi.json` — mirrored from [`greenlight/openapi.json`](https://github.com/screenjson/greenlight).
 
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+Mintlify regenerates the per-endpoint pages automatically on deploy.
