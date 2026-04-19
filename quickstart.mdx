@@ -63,6 +63,16 @@ screenjson-export -i script.fdx | jq '.document.scenes | length'
 screenjson-export -i script.fdx | jq '.characters[].name'
 ```
 
+## 4. Read it in the browser
+
+The hosted viewer at [screenjson.com/viewer/](https://screenjson.com/viewer/)
+renders any ScreenJSON document as a Final Draft / WriterDuet-style
+screenplay. Drop your file in, paste a URL, or deep-link with `?src=`:
+
+```
+https://screenjson.com/viewer/?src=https://example.com/screenplay.json
+```
+
 ## Next steps
 
 <CardGroup cols={2}>

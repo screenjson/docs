@@ -3,7 +3,9 @@ title: Configuration options
 description: The complete ScreenJSONUIConfig reference.
 ---
 
-Every viewer — whether embedded via `new ScreenJSONUI(...)`, auto-mounted from a CDN script tag, or passed as Svelte props — supports the same option set.
+Every viewer — whether embedded via `new ScreenJSONUI(...)`, auto-mounted
+from a CDN script tag, or used as a Svelte component — supports the same
+option set.
 
 ## `ScreenJSONUIConfig`
 
@@ -12,15 +14,14 @@ Every viewer — whether embedded via `new ScreenJSONUI(...)`, auto-mounted from
 | `element` | `string \| HTMLElement` | — **required** | Mount point. String is treated as an `id`. |
 | `src` | `string` | — | URL to fetch the ScreenJSON document from. |
 | `document` | `ScreenJSONDocument` | — | Pre-loaded document. Takes precedence over `src`. |
-| `theme` | `'light' \| 'dark'` | `'light'` | Initial theme. |
-| `zoom` | `number` | `1` | 0.5 – 2. |
-| `lang` | `Lang` | document `lang` | BCP 47 tag for which text key to render. |
-| `page` | `number` | `1` | Initial page (1-based). |
+| `theme` | `'light' \| 'dark'` | system preference | Initial theme. Persisted to `localStorage['screenjson-theme']`. |
+| `zoom` | `number` | `1` | Manual multiplier on top of auto-fit. 0.5 – 2. |
+| `lang` | `Lang` | document `lang` | BCP 47 tag — chooses which language to render. |
 | `numbered` | `boolean` | `false` | Show scene numbers in the margin. |
 | `paginated` | `boolean` | `true` | Show page numbers. |
-| `corner` | `'top-left' \| 'top-right' \| 'bottom-left' \| 'bottom-right'` | `'top-right'` | Menu button position. |
-| `virtual` | `boolean` | `false` | Use virtual scrolling — required for 50+ page documents. |
 | `password` | `string` | — | Password for encrypted content. If omitted on an encrypted document, the viewer opens a `PasswordModal`. |
+| `showMenu` | `boolean` | `true` | Render the built-in sticky toolbar (theme, zoom, language, info, print, download). |
+| `class` | `string` | — | Extra CSS class applied to the outer wrapper. |
 | `onLoad` | `(doc: ScreenJSONDocument) => void` | — | Called once on successful load. |
 | `onPageChange` | `(page: number) => void` | — | Called on every page change. |
 | `onError` | `(err: LoaderError) => void` | — | Called on fetch / parse / decrypt error. |
@@ -31,30 +32,64 @@ Every viewer — whether embedded via `new ScreenJSONUI(...)`, auto-mounted from
 type Theme = 'light' | 'dark';
 ```
 
+Theme resolution order at boot:
+
+1. `config.theme`
+2. `localStorage['screenjson-theme']`
+3. `prefers-color-scheme`
+4. `'light'` (final fallback)
+
 ## `Lang`
 
-BCP 47 language tag string — e.g. `en`, `en-GB`, `fr-CA`, `ja`, `zh-Hant`.
+A BCP 47 language tag string — `en`, `en-GB`, `fr-CA`, `ja`, `zh-Hant`,
+`sr-Latn-RS`. The viewer's language picker only appears when the
+document declares more than one.
+
+## Auto-fit zoom
+
+The viewer measures its container width and shrinks the paper to fit
+when the viewport is narrower than the natural 8.5″ page. Your `zoom`
+config is a multiplier on top of that fit:
+
+```
+effectiveZoom = clamp(0.3, autoFit * zoom, 2)
+```
+
+Toolbar zoom buttons adjust `zoom` in 10% steps.
+
+## CSS variables
+
+Every visual token is a CSS custom property declared on `:root` (or on
+`html.dark` for the dark variant). Override any of them in your own
+stylesheet to re-theme:
+
+```css
+:root {
+  --color-paper:        #fffdf6;     /* warm paper */
+  --color-paper-fg:     #1a1a16;
+  --color-workspace:    #d6d3c4;
+  --color-brand-500:    #6a1ef0;
+  --margin-action-left: 1.7in;       /* WB margins */
+}
+```
+
+The complete token list is in [`app.css`](https://github.com/screenjson/screenjson-ui/blob/main/src/app.css).
 
 ## Formatting constants
 
-The viewer exports formatting constants from `screenjson-ui/constants/formatting`:
+The viewer also exports formatting constants from
+`screenjson-ui/dist/...` if you want to reuse them in your own
+calculations:
 
 ```ts
 import {
-  PAPER_LETTER_WIDTH,   // 8.5 inches
-  PAPER_LETTER_HEIGHT,  // 11 inches
-  PAPER_A4_WIDTH,
-  PAPER_A4_HEIGHT,
-  FONT_COURIER_PRIME,   // 'Courier Prime'
-  LINES_PER_PAGE,       // 60
-  // Margins in inches
-  ACTION_MARGIN_LEFT,         // 1.7
-  ACTION_MARGIN_RIGHT,        // 1.1
-  DIALOGUE_MARGIN_LEFT,       // 2.7
-  DIALOGUE_MARGIN_RIGHT,      // 2.4
-  CHARACTER_MARGIN_LEFT,      // 4.1
-  PARENTHETICAL_MARGIN_LEFT,  // 3.4
-  PARENTHETICAL_MARGIN_RIGHT, // 3.1
-  TRANSITION_MARGIN_LEFT,     // 6.0
+  PAGE_WIDTH_INCHES,    // 8.5
+  PAGE_HEIGHT_INCHES,   // 11
+  PAGE_WIDTH_PX,        // 816
+  PAGE_HEIGHT_PX,       // 1056
+  FONT_SIZE_PT,         // 12
+  LINES_PER_INCH,       // 6
+  MAX_LINES_PER_PAGE,   // 60
+  MARGINS               // { page, action, dialogue, character, parenthetical, transition }
 } from 'screenjson-ui';
 ```

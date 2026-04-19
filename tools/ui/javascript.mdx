@@ -5,14 +5,14 @@ description: Embed screenjson-ui via the ScreenJSONUI class.
 
 ```ts
 import ScreenJSONUI, { type ScreenJSONUIConfig } from 'screenjson-ui';
+import 'screenjson-ui/style.css';
 
 const viewer = new ScreenJSONUI({
-  element: 'viewer',        // id or HTMLElement
-  src: '/screenplay.json',
-  theme: 'dark',
-  virtual: true,
+  element: 'viewer',           // an id or HTMLElement
+  src:     '/screenplay.json',
+  theme:   'dark',
   onLoad:       (doc)  => console.log('loaded', doc.title),
-  onPageChange: (page) => console.log('page', page),
+  onPageChange: (page) => console.log('page', page)
 });
 ```
 
@@ -22,37 +22,61 @@ const viewer = new ScreenJSONUI({
 new ScreenJSONUI(config: ScreenJSONUIConfig)
 ```
 
-The constructor resolves `config.element` immediately and begins initialisation asynchronously.
+The constructor resolves `config.element` immediately and begins
+initialisation asynchronously.
 
 ### `element: string | HTMLElement`
 
-Either an `id` (as a string without the `#`) or an `HTMLElement` reference. If the id does not resolve, the constructor throws `Element not found: <id>`.
+Either an element id (without the `#`) or an `HTMLElement` reference. If
+the id does not resolve, the constructor throws
+`Element not found: <id>`.
 
 ### `src: string`
 
-URL of a ScreenJSON document. Fetched and parsed by the internal `DocumentLoader`.
+URL of a ScreenJSON document. The internal `DocumentLoader` fetches and
+parses it. Failures call `onError` with a structured `LoaderError`.
 
 ### `document: ScreenJSONDocument`
 
-Pre-loaded ScreenJSON document. Takes precedence over `src` when both are provided.
+A pre-loaded document. Takes precedence over `src` when both are
+provided — useful when you've already fetched and validated the doc.
 
 ## Loading precedence
 
 When no `document` is passed, the loader looks for a source in this order:
 
 1. `config.src`
-2. The `?src=` query parameter on the current page URL
-3. The `data-src` / `data-source` attribute on the currently executing `<script>` tag (CDN embed)
+2. `?src=` query parameter on the host page URL
+3. `data-src` / `data-source` on the currently-executing `<script>` tag (CDN auto-mount)
 
-If none resolve, the viewer renders an error with a "No Document Source" suggestion.
+If none resolve, the viewer renders a `LoaderError` with code
+`UNKNOWN` and a "No Document Source" suggestion.
+
+## Theme
+
+`config.theme` is the *initial* theme. The viewer also:
+
+- Reads `localStorage['screenjson-theme']` first.
+- Falls back to `prefers-color-scheme`.
+- Persists the user's toolbar choice back to `localStorage`.
+
+Toggle theme programmatically by calling `setTheme('light' | 'dark')`
+on the instance, or by toggling the `dark` class on the `<html>`
+element directly.
+
+## Zoom
+
+`config.zoom` is a *manual multiplier* on top of the auto-fit zoom that
+shrinks the paper to fit the viewport. `1` is auto-fit; `1.5` zooms in
+50% on top of fit; `0.5` halves the auto-fit scale.
 
 ## Callbacks
 
 | Callback | Argument | Fires |
 |---|---|---|
 | `onLoad` | `ScreenJSONDocument` | Once, after the document loads and the first page renders. |
-| `onPageChange` | `number` (1-based) | On every page change from the menu or scroll. |
-| `onError` | `LoaderError` | On load failure — unknown URL, fetch error, invalid document, wrong password. |
+| `onPageChange` | `number` (1-based) | On every page change initiated by the toolbar. |
+| `onError` | `LoaderError` | On fetch / parse / decrypt failure. |
 
 ## Complete example
 
@@ -62,21 +86,19 @@ If none resolve, the viewer renders an error with a "No Document Source" suggest
 <script type="module">
   import ScreenJSONUI from 'https://cdn.screenjson.com/ui/screenjson-ui.js';
 
-  const viewer = new ScreenJSONUI({
-    element: 'viewer',
-    src: '/screenplay.json',
-    theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
-    virtual: true,
-    numbered: true,
+  new ScreenJSONUI({
+    element:   'viewer',
+    src:       '/screenplay.json',
+    theme:     matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+    zoom:      1,
+    lang:      'en',
+    numbered:  true,
     paginated: true,
-    zoom: 1,
-    lang: 'en',
-    corner: 'top-right',
-    onLoad:       (doc)  => console.log('Loaded', doc.title),
-    onPageChange: (page) => console.log('Page', page),
-    onError:      (err)  => console.error(err),
+    onLoad:       (doc)  => console.log('loaded', doc.title),
+    onPageChange: (page) => console.log('page', page),
+    onError:      (err)  => console.error(err)
   });
 </script>
 ```
 
-See [Options](/tools/ui/options) for the full config table.
+See [Options](/tools/ui/options) for the complete config surface.

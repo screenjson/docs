@@ -1,55 +1,60 @@
 ---
 title: Overview
-description: screenjson-ui is an embeddable JavaScript viewer for ScreenJSON documents.
+description: screenjson-ui is an embeddable JavaScript viewer that renders ScreenJSON documents as Final Draft / WriterDuet-style screenplays in the browser.
 ---
 
-`screenjson-ui` renders a ScreenJSON document as a pixel-accurate, studio-quality screenplay in the browser.
+`screenjson-ui` renders a ScreenJSON document as a pixel-accurate, studio-quality screenplay in the browser. It ships as a small ES module + UMD bundle, drops in via npm or a CDN script tag, and exposes a native Svelte component for SvelteKit projects.
+
+<Card title="See it in action" href="https://screenjson.com/viewer/" icon="play">
+  The hosted viewer at <code>screenjson.com/viewer/</code> embeds the same library, with a sidebar of bundled examples, file upload, and URL loader.
+</Card>
 
 ## Features
 
-- **Hollywood / Warner Bros / Final Draft formatting.** Courier Prime 12pt, 60 lines per page, industry-standard margins.
-- **Dark and light themes** with persistence.
-- **Multi-language** — switch the rendered language at runtime.
-- **Virtual scrolling** for 300+ page documents.
-- **Responsive** — 400 px mobile to 1200 px+ desktop.
-- **Encryption** — decrypt in-browser with a password.
-- **Bookmarks and notes** — stored in `localStorage`.
-- **Metadata panel** — character list, scene index, SFX / VFX / props / wardrobe breakdowns.
+- **Print-screenplay layout** — US Letter, Courier Prime 12pt, industry-standard margins for action, dialogue, character cues, parentheticals, shots, and transitions.
+- **Light and dark themes** — `html.dark` class strategy, system-preference detection, persisted in `localStorage`.
+- **Continuous-scroll pagination** — every page rendered in flow, top to bottom; CSS `zoom` auto-fit shrinks the paper to viewport on narrow windows, user zoom multiplies on top.
+- **Multi-language** — switch the rendered language at runtime via the toolbar or the `lang` config option.
+- **Encrypted documents** — supply a password (or open the built-in modal) to decrypt AES-256-CTR text runs in-browser.
+- **Built-in toolbar** — title, page count, zoom group, language, info, print, download, theme.
+- **Metadata panel** — overview / characters / scenes drawer.
+- **Tailwind v4 + CSS variables** — easy to re-theme without writing custom CSS.
+- **Zero framework dependency** in the embed API; native Svelte component for SvelteKit users.
 
 ## Distributions
 
-| Distribution | Use |
+| Distribution | When to use |
 |---|---|
-| **npm** | `npm install screenjson-ui` — ESM module, TypeScript types. |
-| **CDN script tag** | Drop-in, no build — `https://cdn.screenjson.com/ui/screenjson-ui.js`. |
-| **Svelte component** | Native `ScreenJSONViewer` component. |
+| **npm** — `npm install screenjson-ui` | You're building a JS/TS app and want types + tree-shaking. |
+| **CDN script tag** — `https://cdn.screenjson.com/ui/screenjson-ui.js` | You want to drop the viewer into any HTML page in two lines. |
+| **Svelte component** — `import { ScreenJSONViewer } from 'screenjson-ui'` | You're on SvelteKit. |
 
-## Entry points
+## Module entry points
 
 | Import | What it is |
 |---|---|
-| `ScreenJSONUI` (default export) | The embed class — pass a config, it mounts the viewer into a container. |
-| `ScreenJSONViewer` | Svelte component. |
+| `ScreenJSONUI` *(default export)* | Embed class — pass a config, it mounts a viewer into a container. |
+| `ScreenJSONViewer` | Svelte component for direct mounting. |
 | `ViewerVirtual`, `Page`, `Menu`, `MetadataPanel`, `ErrorDisplay`, `PasswordModal`, `VirtualScroller` | Individual components for custom layouts. |
 | `DocumentLoader`, `loadFromUrl` | Fetch + parse helpers. |
-| `Paginator`, `paginate`, `createPaginator` | Client-side pagination. |
+| `Paginator`, `paginate`, `createPaginator` | Client-side pagination engine. |
 | `validateDocument`, `isScreenJSONDocument` | Shape checks. |
 | `hasEncryptedContent`, `decryptDocument`, `decryptText` | Encryption helpers. |
 | `themeStore`, `settingsStore`, `documentStore` | Svelte stores. |
 
 ## Rendering standard
 
-Matches the Warner Bros / Final Draft convention:
+Matches the Warner Bros / Final Draft convention used by every major studio:
 
 - **Paper:** US Letter (8.5" × 11")
-- **Font:** Courier Prime, 12pt
-- **Lines per page:** 60
-- **Margins:** Action 1.7" L / 1.1" R · Dialogue 2.7" L / 2.4" R · Character 4.1" L · Parenthetical 3.4" L / 3.1" R · Transition 6.0" L
+- **Font:** Courier Prime, 12pt (loaded from Google Fonts; falls back to system Courier)
+- **Lines per page:** 60 maximum
+- **Margins:** Action 1.5" L / 1" R · Dialogue 2.5" L / 2" R · Character 3.7" L · Parenthetical 3.1" L / 2.9" R · Transition 5.8" L
 
 ## Browser support
 
-Chrome 90+ · Firefox 90+ · Safari 14+ · Edge 90+.
+Chrome 90+ · Firefox 90+ · Safari 14+ · Edge 90+. Uses CSS `zoom` for paper scaling — works in all four.
 
 ## License
 
-MIT. The viewer is open source; see [GitHub](https://github.com/screenjson/screenjson-ui).
+MIT. The viewer is open source — [github.com/screenjson/screenjson-ui](https://github.com/screenjson/screenjson-ui).

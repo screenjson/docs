@@ -3,37 +3,48 @@ title: Data attributes
 description: Configure the CDN-embedded viewer from attributes on the script tag — no JavaScript required.
 ---
 
-When you drop the CDN build into a page with a `data-src` attribute, the library auto-mounts a viewer for you — no explicit `new ScreenJSONUI(...)` call needed.
+When you drop the CDN build into a page with a `data-src` attribute, the
+library auto-mounts a viewer for you. No explicit `new ScreenJSONUI(...)`
+call needed.
 
 ## Minimum viable embed
 
 ```html
+<link rel="stylesheet" href="https://cdn.screenjson.com/ui/screenjson-ui.css" />
 <script
   src="https://cdn.screenjson.com/ui/screenjson-ui.js"
   data-src="/screenplay.json">
 </script>
 ```
 
-## All supported attributes
+The library scans for `<script>` tags whose `src` matches `*screenjson*`
+and that carry a `data-src`. For each one, it injects a sibling
+container, sizes it via `data-width` / `data-height` if provided, and
+mounts a viewer.
+
+## Supported attributes
 
 Every attribute is optional unless noted.
 
 | Attribute | Type | Equivalent config | Notes |
 |---|---|---|---|
 | `data-src` (**required**) | string | `src` | URL of the ScreenJSON document. `data-source` is accepted as an alias. |
-| `data-theme` | `light` \| `dark` | `theme` | Initial theme. Defaults to `light`. |
+| `data-theme` | `light` \| `dark` | `theme` | Initial theme. Defaults to system preference. |
 | `data-zoom` | number | `zoom` | Parsed as a float. |
 | `data-lang` | BCP 47 | `lang` | Override the rendered language. |
-| `data-virtual` | `true` \| `false` | `virtual` | Virtual scrolling. |
+| `data-virtual` | `true` \| `false` | `virtual` | Use virtual scrolling for very long documents. |
 | `data-width` | CSS length | — | Container width. Numeric values get `px`; `%` suffix preserved. |
 | `data-height` | CSS length | — | Container height. Numeric values get `px`; `%` suffix preserved. |
 
-The auto-mount only fires for script tags whose `src` matches `*screenjson*` and that carry `data-src`.
-
 ## Query parameters
 
-Alternatively, a `?src=<url>` parameter on the current page URL is also picked up if no `src` is supplied in config. Useful for embedding a viewer on a dedicated page:
+A `?src=<url>` parameter on the host page URL is also picked up if no
+`src` is supplied in config or attributes. Useful for embedding a
+viewer on a dedicated page:
 
 ```
 https://viewer.example.com/?src=https://cdn.example.com/screenplay.json&theme=dark
 ```
+
+The hosted viewer at <https://screenjson.com/viewer/> uses exactly this
+pattern.

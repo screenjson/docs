@@ -9,47 +9,79 @@ description: Install screenjson-ui from npm or via the CDN script tag.
 npm install screenjson-ui
 ```
 
+```ts
+import ScreenJSONUI from 'screenjson-ui';
+import 'screenjson-ui/style.css';
+```
+
 Package metadata:
 
 | Field | Value |
 |---|---|
 | `name` | `screenjson-ui` |
 | `version` | `1.0.0` |
-| `main` / `module` | `./dist/screenjson-ui.js` |
+| `module` | `./dist/screenjson-ui.js` (ES) |
+| `main` | `./dist/screenjson-ui.umd.js` (UMD) |
 | `types` | `./dist/index.d.ts` |
-| `exports["./dist/style.css"]` | Pre-compiled stylesheet for non-Svelte usage. |
+| `exports["./style.css"]` | Pre-compiled stylesheet — `import 'screenjson-ui/style.css'`. |
+| `sideEffects` | `["*.css"]` so bundlers don't tree-shake the styles. |
 
 ## CDN
 
-```html
-<script src="https://cdn.screenjson.com/ui/screenjson-ui.js"></script>
-```
-
-The CDN build is a single ES-module bundle. Use it as the script tag shown above or import it as an ESM URL in modern browsers.
-
-## CSS
-
-If you use the CDN build or a bundler that doesn't auto-import Svelte styles, include the stylesheet:
+Single ES-module bundle plus a stylesheet:
 
 ```html
-<link rel="stylesheet" href="https://cdn.screenjson.com/ui/style.css">
+<link  rel="stylesheet" href="https://cdn.screenjson.com/ui/screenjson-ui.css" />
+<script type="module"
+        src="https://cdn.screenjson.com/ui/screenjson-ui.js"></script>
 ```
 
-Or, from npm:
+Alternatively, import the ESM URL directly inside a module script:
 
-```ts
-import 'screenjson-ui/dist/style.css';
+```html
+<script type="module">
+  import ScreenJSONUI from 'https://cdn.screenjson.com/ui/screenjson-ui.js';
+  new ScreenJSONUI({ element: 'viewer', src: '/screenplay.json' });
+</script>
+```
+
+## Hosted viewer
+
+If you only need to read a single document and don't want to host the
+viewer yourself, the same library is mounted at
+[`screenjson.com/viewer/`](https://screenjson.com/viewer/) — drop a file or
+paste a URL. Deep-link with `?src=`:
+
+```
+https://screenjson.com/viewer/?src=https://example.com/screenplay.json
+```
+
+## Fonts
+
+The library uses **Courier Prime**, loaded by `app.css` from Google Fonts:
+
+```css
+@import url("https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap");
+```
+
+If you prefer to self-host, install the font separately and override
+`--font-screenplay` in your own CSS:
+
+```css
+:root {
+  --font-screenplay: "Courier Prime", "Courier New", monospace;
+}
 ```
 
 ## TypeScript
 
-Types ship with the npm package. Import whatever you need:
+Types ship with the npm package:
 
 ```ts
 import ScreenJSONUI, {
   type ScreenJSONUIConfig,
   type ScreenJSONDocument,
   type Theme,
-  type Lang,
+  type Lang
 } from 'screenjson-ui';
 ```

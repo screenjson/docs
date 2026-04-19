@@ -6,32 +6,31 @@ description: Drop ScreenJSONViewer into a Svelte or SvelteKit app.
 ```svelte
 <script lang="ts">
   import { ScreenJSONViewer } from 'screenjson-ui';
+  import 'screenjson-ui/style.css';
   import type { ScreenJSONDocument } from 'screenjson-ui';
 
   export let document: ScreenJSONDocument;
   let theme: 'light' | 'dark' = 'light';
 </script>
 
-<ScreenJSONViewer {document} {theme} numbered virtual />
+<ScreenJSONViewer {document} {theme} numbered />
 ```
 
 ## Component props
 
-`ScreenJSONViewer` accepts the same options as the JavaScript constructor, bound as props:
+`ScreenJSONViewer` accepts the same options as the JavaScript constructor:
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
 | `document` | `ScreenJSONDocument` | — | Pre-loaded document. |
 | `src` | `string` | — | URL to load from (alternative to `document`). |
-| `theme` | `'light' \| 'dark'` | `'light'` | Theme. |
-| `zoom` | `number` | `1` | 0.5 – 2. |
-| `lang` | `Lang` | document default | Render language. |
-| `page` | `number` | `1` | Initial page (1-based). |
-| `numbered` | `boolean` | `false` | Show scene numbers. |
+| `theme` | `'light' \| 'dark'` | system preference | Initial theme. |
+| `zoom` | `number` | `1` | Manual multiplier on top of auto-fit. 0.5 – 2. |
+| `lang` | `Lang` | document `lang` | Render language. |
+| `numbered` | `boolean` | `false` | Show scene numbers in the margin. |
 | `paginated` | `boolean` | `true` | Show page numbers. |
-| `corner` | `'top-left' \| 'top-right' \| 'bottom-left' \| 'bottom-right'` | `'top-right'` | Menu position. |
-| `virtual` | `boolean` | `false` | Virtual scrolling. |
 | `password` | `string` | — | Decrypt password for encrypted content. |
+| `showMenu` | `boolean` | `true` | Render the built-in toolbar. Set to `false` if your app provides its own chrome. |
 
 ## Other exported components
 
@@ -46,7 +45,7 @@ import {
   MetadataPanel,
   ErrorDisplay,
   PasswordModal,
-  VirtualScroller,
+  VirtualScroller
 } from 'screenjson-ui';
 ```
 
@@ -58,7 +57,7 @@ Three reactive Svelte stores are exported:
 import { themeStore, settingsStore, documentStore } from 'screenjson-ui';
 import type { Theme } from 'screenjson-ui';
 
-$themeStore = 'dark';
+themeStore.set('dark');
 ```
 
 ## SvelteKit route example
@@ -75,8 +74,9 @@ export async function load({ fetch, params }) {
 <!-- +page.svelte -->
 <script lang="ts">
   import { ScreenJSONViewer } from 'screenjson-ui';
+  import 'screenjson-ui/style.css';
   export let data;
 </script>
 
-<ScreenJSONViewer document={data.doc} theme="dark" virtual />
+<ScreenJSONViewer document={data.doc} theme="dark" />
 ```

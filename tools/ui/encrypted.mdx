@@ -3,22 +3,30 @@ title: Encrypted documents
 description: Open encrypted ScreenJSON documents in the viewer.
 ---
 
-When a document's `encrypt` block is set, the viewer can decrypt text in-browser before rendering.
+When a document's `encrypt` block is set, the viewer can decrypt text
+runs in-browser before rendering. Structure, UUIDs, and metadata stay
+visible regardless.
 
 ## Detection
 
-The loader calls `hasEncryptedContent(doc)` on every load. If encrypted content is detected, one of two flows runs:
+The loader calls `hasEncryptedContent(doc)` on every load. If encrypted
+content is detected, one of two flows runs:
 
-1. **Password in config** — if `password` was passed in config, it's used to decrypt in-memory.
-2. **Password modal** — otherwise a `PasswordModal` component is rendered, prompting the user.
+1. **Password in config** — if `password` was passed in config, it's
+   used to decrypt in-memory and the viewer renders directly.
+2. **Password modal** — otherwise a `PasswordModal` appears, prompting
+   the user. Wrong passwords trigger an inline error and re-prompt.
 
 ## JavaScript
 
 ```ts
+import ScreenJSONUI from 'screenjson-ui';
+import 'screenjson-ui/style.css';
+
 new ScreenJSONUI({
-  element: 'viewer',
-  src: '/encrypted.json',
-  password: 'SharedSecret123',
+  element:  'viewer',
+  src:      '/encrypted.json',
+  password: 'SharedSecret123'
 });
 ```
 
@@ -36,21 +44,30 @@ Imported from the library:
 import {
   hasEncryptedContent,
   decryptDocument,
-  decryptText,
+  decryptText
 } from 'screenjson-ui';
 
 const doc = await fetch('/encrypted.json').then((r) => r.json());
 if (hasEncryptedContent(doc)) {
-  decryptDocument(doc, 'SharedSecret123');
+  decryptDocument(doc, 'SharedSecret123');  // mutates in place
 }
 ```
 
 | Helper | Signature | Purpose |
 |---|---|---|
-| `hasEncryptedContent(doc)` | `(doc: ScreenJSONDocument) => boolean` | Detects encryption on any element in the document. |
-| `decryptDocument(doc, key)` | Mutates in place. | Decrypts every encrypted text run in the document tree. |
-| `decryptText(cipher, key, encoding?)` | Returns plain text. | Decrypts a single AES-256-CTR text run. |
+| `hasEncryptedContent(doc)` | `(doc: ScreenJSONDocument) => boolean` | Detect encryption on any element in the document. |
+| `decryptDocument(doc, key)` | mutates in place | Decrypt every encrypted text run in the document tree. |
+| `decryptText(cipher, key, encoding?)` | returns plain text | Decrypt a single AES-256-CTR text run. |
 
 ## Errors
 
-When a wrong password is supplied, the viewer calls `onError` with a `LoaderError` carrying `code: 'DECRYPT_FAILED'`. The modal flow retries until the user cancels or succeeds.
+When a wrong password is supplied, the viewer calls `onError` with a
+`LoaderError` carrying `code: 'DECRYPT_FAILED'`. The modal flow retries
+until the user cancels or succeeds.
+
+## What's encrypted (recap)
+
+ScreenJSON's encryption block targets text runs only — UUIDs, scene
+counts, character names, revision metadata, and `meta` stay in plain
+text. See the [Encryption specification](/specification/encryption) for
+exactly which fields are touched.
