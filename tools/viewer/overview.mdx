@@ -1,0 +1,63 @@
+---
+title: Overview
+description: screenjson-viewer is the native ScreenJSON reader — one Tauri 2 app targeting desktop and mobile from a single codebase.
+---
+
+`screenjson-viewer` opens ScreenJSON files as a native application. It wraps the
+same rendering stack as [`@screenjson/ui`](/tools/ui/overview) in a Tauri 2
+shell, so a screenplay looks identical in the browser and on the desktop.
+
+<Card title="Repository" href="https://github.com/screenjson/screenjson-viewer" icon="github">
+  Source, releases and build instructions.
+</Card>
+
+## Platforms
+
+- Windows
+- macOS
+- Linux
+- iOS
+- Android
+
+## What it does
+
+- Opens local `.json` ScreenJSON files, through the file dialog or by
+  association with `application/vnd.screenjson+json`
+- Rejects invalid JSON and non-ScreenJSON files with a readable error rather
+  than a blank page
+- Prompts for a password on encrypted screenplays and decrypts in memory only
+- Renders through `@screenjson/ui`, so pagination, themes, language switching
+  and the metadata panel behave exactly as they do on the web
+- Keeps a reader-first layout that adapts from phone to desktop widths
+
+## Install from source
+
+```bash
+git clone https://github.com/screenjson/screenjson-viewer.git
+cd screenjson-viewer
+npm install
+```
+
+The viewer takes `@screenjson/ui` from npm as an ordinary dependency, so no
+extra step is needed to fetch the rendering library.
+
+## Run and build
+
+```bash
+npm run tauri:dev      # run with hot reload
+npm run tauri:build    # bundle for the current platform
+```
+
+Mobile targets use the `tauri:android:*` and `tauri:ios:*` scripts and need the
+corresponding platform SDK installed.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="@screenjson/ui" href="/tools/ui/overview" icon="browser">
+    The rendering library the viewer embeds.
+  </Card>
+  <Card title="screenjson-cli" href="/tools/cli/overview" icon="terminal">
+    Convert screenplays into ScreenJSON to read here.
+  </Card>
+</CardGroup>

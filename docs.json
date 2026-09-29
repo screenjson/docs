@@ -75,6 +75,12 @@
             ]
           },
           {
+            "group": "screenjson-viewer",
+            "pages": [
+              "tools/viewer/overview"
+            ]
+          },
+          {
             "group": "Greenlight",
             "pages": [
               "tools/greenlight/overview",
