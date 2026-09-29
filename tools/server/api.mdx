@@ -1,0 +1,75 @@
+---
+title: How the API works
+description: Paths, revisions, moves, checkouts and passes, explained without the jargon.
+---
+
+Every route is listed in the [API reference](/api-reference/server/introduction) and in the server's own explorer at `/swagger/`, where you can try them. This page explains the handful of ideas behind them.
+
+## Every part of a script has an address
+
+A screenplay is a tree: the document holds scenes, scenes hold elements (lines of action, dialogue and so on). The URLs follow that tree:
+
+```
+/documents/{doc}                                        the whole script
+/documents/{doc}/scenes/{scene}                         one scene
+/documents/{doc}/scenes/{scene}/heading                 its slugline
+/documents/{doc}/scenes/{scene}/elements/{type}/{el}    one line
+/documents/{doc}/scenes/{scene}/elements/{type}/{el}/text/fr   that line in French
+```
+
+Reading an address returns that part as ScreenJSON. Writing to it changes that part and nothing else. Lists take `POST` to add:
+
+| Method | On a part | On a list |
+|---|---|---|
+| `GET` | Read it | Read it, in script order |
+| `POST` | | Add one (`?after=`, `?before=` or `?position=first\|last`) |
+| `PUT` | Replace it | |
+| `PATCH` | Change some fields (a JSON merge patch) | |
+| `DELETE` | Remove it | |
+
+Other lists hang off the document the same way: `/authors`, `/characters`, `/bookmarks`, `/cover`, `/layout` and so on.
+
+## Nobody overwrites anybody
+
+Every part answers with an `ETag`, its revision number. When you write, send it back as `If-Match`:
+
+```bash
+curl -si $S/documents/$DOC/scenes/$SCENE/elements/action/$EL | grep -i etag
+# ETag: "3"
+curl -X PATCH $S/documents/$DOC/scenes/$SCENE/elements/action/$EL \
+     -H 'If-Match: "3"' -d '{"text": {"en": "The door opens."}}'
+```
+
+If someone else changed that line since you read it, you get `412` instead of silently overwriting their work: read it again and retry. Writes to one document are applied one at a time, in order, and each is checked against the ScreenJSON schema; a change that would break the script is refused with `422`, saying which field is wrong.
+
+## Things move; addresses keep working
+
+An element's address includes its scene and type. If it moves to another scene or changes type, its old address answers `308` with the new one, so a client holding an old link still finds it. `/documents/{doc}/nodes/{uuid}` finds anything by its ID alone. A deleted part answers `410` for a while, then `404`.
+
+## Checkouts: "I'm working on this"
+
+`POST …/checkout` on a line or scene holds it for your token, for five minutes by default. Anyone else trying to change it, or to move or delete what it sits in, gets `423` until you write it back or `DELETE …/checkout`. Checkouts need a token: get one with `POST /tokens` and send it as `Authorization: Bearer <token>`.
+
+## Passes: sharing out a big job
+
+To have many workers go through a whole library ("translate every line of dialogue"), give the job a name, a *pass*, and let each worker ask for a batch:
+
+```bash
+curl -X POST $S/documents/-/scenes/-/elements/dialogue/checkout \
+     -H "Authorization: Bearer $T" -d '{"limit": 20, "pass": "translate-fr"}'
+```
+
+`-` means "any document" or "any scene". The server hands each worker lines nobody else holds and nobody has finished. A worker finishes a line by writing it with `?pass=translate-fr&release=true`. When the answer comes back empty with `exhausted: true`, there is nothing left to hand out. `GET /passes/translate-fr` shows progress. Each line is handed out, and counted, once.
+
+## Errors
+
+Errors are JSON, with a `code` to act on and `details` pointing at the fields at fault:
+
+```json
+{"error": {"code": "invalid", "message": "…", "path": "/documents/…", "id": "…",
+           "details": [{"pointer": "/text", "message": "…"}]}}
+```
+
+## Live events
+
+`GET /status` says where to connect. Subscribe to `doc:{id}` to receive every change to a script as it happens, `library` for the library, or `pass:{label}` for a pass's progress. Each change carries the document's sequence number (`seq`), so a client can tell if it missed one and reload.

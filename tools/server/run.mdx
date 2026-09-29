@@ -1,0 +1,92 @@
+---
+title: Run it
+description: Run screenjson-server in a container, with Docker Compose or on Kubernetes.
+---
+
+screenjson-server always runs as a container. The image holds the server, the web app, the API explorer and the `screenjson` CLI it uses for exports, and runs as an unprivileged user (uid 10001).
+
+## Docker Compose
+
+The repository's Compose file has one profile per database. For MongoDB:
+
+```bash
+git clone https://github.com/screenjson/screenjson-server.git
+cd screenjson-server
+make docker
+docker compose -f deploy/compose.yaml --profile mongo up
+```
+
+Then open [http://127.0.0.1:8080](http://127.0.0.1:8080). If port 8080 is taken, set another:
+
+```bash
+SCREENJSON_PORT=18080 docker compose -f deploy/compose.yaml --profile mongo up
+```
+
+| Profile | Starts |
+|---|---|
+| `mongo` | MongoDB-compatible storage (FerretDB) and the server |
+| `postgres` | PostgreSQL with pgvector, and the server |
+| `elastic` | Elasticsearch, and the server |
+| `chroma` | Chroma, and the server |
+| `weaviate` | Weaviate, and the server |
+| `minio`, `azurite` | Object storage for exports |
+| `centrifugo` | An external Centrifugo for live events |
+
+<Note>
+The server has no login of its own, so Compose only publishes it on `127.0.0.1`. Put it behind something that authenticates before exposing it.
+</Note>
+
+## One container, no database
+
+For a quick look, the image keeps everything in memory when told to. Nothing survives a restart.
+
+```bash
+docker run --rm -p 127.0.0.1:8080:8080 -e SCREENJSON_STORAGE_DRIVER=memory screenjson-server:dev
+```
+
+## What it serves
+
+Everything is on the one port, answered by the Go server:
+
+| Path | What |
+|---|---|
+| `/` | The web app. It routes itself after the `#`: `/#/d/{id}` opens a script, `/#/status` the server's status and tokens. |
+| `/documents`, `/tokens`, `/passes`, `/search`, `/status` | The JSON API, with no version prefix. |
+| `/swagger/` | The API explorer. |
+| `/openapi.json` | The API as an OpenAPI 3.1 document. |
+| `/connection/websocket` | Live events. |
+| `/healthz`, `/readyz` | Liveness and readiness, for the container runtime. |
+| `/metrics` | Prometheus metrics. |
+
+## Settings
+
+Settings come from a YAML file (`SCREENJSON_CONFIG`), environment variables and `--set path=value` flags; an environment variable overrides the file, and a flag overrides both. The ones you'll reach for first:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `SCREENJSON_STORAGE_DRIVER` | `memory` | `mongo`, `postgres`, `elastic`, `chroma`, `weaviate` or `memory`. |
+| `SCREENJSON_STORAGE_URL` | | The database's connection URL. |
+| `SCREENJSON_STORAGE_DATABASE` | | The database name, where there is one. |
+| `SCREENJSON_STORAGE_LAYOUT` | `elements` | How documents are split: `whole`, `scenes` or `elements`. |
+| `SCREENJSON_MODE` | `full` | `headless` serves the API without the web app. |
+| `SCREENJSON_HTTP_REQUIRE_TOKEN` | `false` | Refuse requests that carry no token. |
+| `SCREENJSON_ENGINE_ENCRYPT_KEY` | | Key for encrypted exports and for exporting encrypted scripts. |
+| `SCREENJSON_BLOB_DRIVER` | `fs` | Where exports go: `s3`, `minio`, `azure` or `fs`. |
+| `SCREENJSON_GIT_ENABLED` | `false` | Commit each script to Git. |
+| `SCREENJSON_EVENTS_BACKEND` | `embedded` | `centrifugo` to publish through an external Centrifugo. |
+
+The repository's `docs/CONFIG.md` lists every setting. `screenjson-server config check` prints the settings in force, with secrets masked.
+
+The container keeps a small state store (tokens, pass progress and the library index) in `/data`. Give it a volume.
+
+## Kubernetes
+
+`deploy/k8s` is a Kustomize base: a Deployment, a volume claim for `/data`, a ConfigMap for the settings, a Secret for credentials, and a ClusterIP Service.
+
+```bash
+kubectl apply -k deploy/k8s
+```
+
+<Warning>
+Run **one** replica per database. Checkouts and each document's write queue live in the server process, so two servers on one database would hand out conflicting checkouts. The server refuses to start while another one's lease on the database is fresh.
+</Warning>

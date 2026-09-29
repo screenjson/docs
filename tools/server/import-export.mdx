@@ -1,0 +1,50 @@
+---
+title: Import and export
+description: Bring scripts in from Final Draft, Fade In or Fountain, and get them out as PDF, files in cloud storage, or Git history.
+---
+
+## Bringing scripts in
+
+The server stores ScreenJSON. Convert other formats with [screenjson-cli](/tools/cli/convert) first, then send the result:
+
+```bash
+screenjson convert -i script.fountain -o script.json
+curl -X POST http://127.0.0.1:8080/documents --data-binary @script.json
+```
+
+The server checks the whole document against the ScreenJSON schema, gives any part without an ID one, and answers `201` with the stored document. For a folder of converted scripts, `screenjson-server import` sends them all.
+
+## Getting scripts out
+
+Download a script in any format the CLI writes:
+
+```bash
+curl -o script.pdf "http://127.0.0.1:8080/documents/$DOC/export?format=pdf"
+```
+
+| `format` | File |
+|---|---|
+| `jscn` (default) | ScreenJSON, in canonical form |
+| `pdf` | PDF, US Letter, Courier |
+| `fdx` | Final Draft |
+| `fadein` | Fade In |
+| `fountain` | Fountain |
+
+`lang` picks the language of a multilingual script; `encrypt=true` encrypts the text (ScreenJSON only). Encrypted scripts are decrypted for export with the server's key.
+
+To write the file to cloud storage instead, `POST …/exports` with a target:
+
+```bash
+curl -X POST "http://127.0.0.1:8080/documents/$DOC/exports" \
+     -d '{"format": "pdf", "target": "s3://scripts/{doc}-{lang}.pdf"}'
+```
+
+Targets are `s3://`, `azure://` or `file://`; `{doc}` and `{lang}` are filled in.
+
+## Git history
+
+With Git export on (`SCREENJSON_GIT_ENABLED=true` and a remote), `POST …/commits` commits a script's current state, and the server can commit on its own after a script has been idle. Each script is written the same way every time, so a one-word change is a one-line diff. Git is export only: edits made in the repository are never read back.
+
+## Webhooks
+
+The server can tell other services when text changes: a signed `POST` of the changed line, with a link to send a computed embedding back. Receivers, events and secrets are set in the configuration file's `webhooks` list.

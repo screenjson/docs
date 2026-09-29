@@ -81,6 +81,15 @@
             ]
           },
           {
+            "group": "screenjson-server",
+            "pages": [
+              "tools/server/overview",
+              "tools/server/run",
+              "tools/server/api",
+              "tools/server/import-export"
+            ]
+          },
+          {
             "group": "Greenlight",
             "pages": [
               "tools/greenlight/overview",
@@ -132,6 +141,17 @@
             "openapi": {
               "source": "api-reference/cli/openapi.json",
               "directory": "api-reference/cli/endpoint"
+            }
+          },
+          {
+            "group": "screenjson-server",
+            "pages": ["api-reference/server/introduction"]
+          },
+          {
+            "group": "screenjson-server endpoints",
+            "openapi": {
+              "source": "api-reference/server/openapi.json",
+              "directory": "api-reference/server/endpoint"
             }
           },
           {

@@ -1,0 +1,44 @@
+---
+title: Overview
+description: screenjson-server stores screenplays and lets many people and programs edit them at once, with every change streamed live.
+---
+
+screenjson-server is a home for a library of screenplays. It keeps each one as ScreenJSON in a database, gives every part of it its own web address, and lets any number of clients read and change those parts at the same time, safely. Every change is broadcast as it happens, so a script open in a browser updates in front of you.
+
+It runs as **one container**: a Go server that serves a web app for reading the library, a JSON API for everything else, and an API explorer that documents every route.
+
+## What it is for
+
+- **A shared library.** Import scripts from Final Draft, Fade In, Fountain or ScreenJSON, browse and search them, and read them properly formatted in the browser.
+- **Many editors at once.** Writers, tools and AI agents can edit the same script without overwriting each other. The server applies changes in order, checks each one against the ScreenJSON schema, and refuses a change based on an out-of-date copy.
+- **Work handed out in batches.** A *pass* lets many workers sweep through thousands of scenes or lines ("translate every line of dialogue", "tag every action"), each piece done exactly once.
+- **Everything out again.** PDF, Final Draft, Fade In, Fountain and ScreenJSON exports, to a download or to cloud storage; Git history for every script; webhooks and search.
+
+## How it fits with the other tools
+
+<CardGroup cols={2}>
+  <Card title="screenjson-cli" icon="terminal" href="/tools/cli/overview">
+    Converts scripts to and from ScreenJSON. The server uses it for exports, and you use it to bring scripts in.
+  </Card>
+  <Card title="screenjson-ui" icon="window-maximize" href="/tools/ui/overview">
+    The script renderer. The server's web app uses it, so a script looks the same everywhere.
+  </Card>
+</CardGroup>
+
+## At a glance
+
+| | |
+|---|---|
+| Runs as | One container, one port (8080) |
+| Web app | `/` — the library, and each script at `/#/d/{id}` |
+| JSON API | `/documents`, `/tokens`, `/passes`, `/search`, `/status` |
+| API explorer | `/swagger/`, and `/openapi.json` |
+| Live events | A websocket at `/connection/websocket` |
+| Databases | MongoDB, PostgreSQL, Elasticsearch, Chroma, Weaviate, or memory |
+
+## Next
+
+- [Run it](/tools/server/run) in a container.
+- [How the API works](/tools/server/api): paths, revisions, checkouts and passes, in plain terms.
+- [Import and export](/tools/server/import-export) scripts.
+- The [API reference](/api-reference/server/introduction) lists every route.

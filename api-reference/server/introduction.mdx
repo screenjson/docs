@@ -1,0 +1,54 @@
+---
+title: Introduction
+description: The screenjson-server REST API.
+---
+
+screenjson-server answers JSON on the same port as its web app (8080 in the container). There is no version prefix: routes start at the root.
+
+## Base URL
+
+| Where | URL |
+|---|---|
+| A local container | `http://localhost:8080` |
+| Your deployment | wherever you've put it, typically behind a reverse proxy |
+
+A running server documents itself: `/swagger/` is an explorer where you can try every route, and `/openapi.json` is the OpenAPI 3.1 document the pages in this section are generated from.
+
+## Routes at a glance
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` `POST` | `/documents` | List the library; import a script. |
+| `GET` `PUT` `PATCH` `DELETE` | `/documents/{doc}` | One script. |
+| `GET` `POST` | `/documents/{doc}/scenes` | Its scenes; insert one. |
+| `GET` `PUT` `PATCH` `DELETE` | `/documents/{doc}/scenes/{scene}` | One scene. |
+| `GET` `POST` | `…/scenes/{scene}/elements` | A scene's lines; insert one. |
+| `GET` `PUT` `PATCH` `DELETE` | `…/elements/{type}/{el}` | One line. |
+| `POST` `PUT` `DELETE` | `…/checkout` | Hold, renew or release a part. On a list, hand out a batch. |
+| `POST` | `…/move` | Move a scene or line. |
+| `GET` `PUT` `DELETE` | `…/embeddings/{model}` | Vectors computed from a part's text. |
+| `GET` | `/documents/{doc}/export` | Download as PDF, FDX, Fade In, Fountain or ScreenJSON. |
+| `POST` | `/documents/{doc}/exports` | Write an export to cloud storage. |
+| `GET` `POST` | `/documents/{doc}/commits` | Git history; commit. |
+| `POST` | `/search` | Full-text or vector search. |
+| `GET` `POST` | `/tokens` | Tokens. |
+| `GET` `DELETE` | `/passes/{label}` | A pass's progress. |
+| `GET` | `/status` | What the server runs on, and where to connect for live events. |
+
+[How the API works](/tools/server/api) explains revisions, moves, checkouts and passes.
+
+## Tokens
+
+The server has no login. A token (`POST /tokens`) names who is making a request, and is sent as `Authorization: Bearer <token>`. Checkouts always need one; other requests need one only when the server is set to require them (`SCREENJSON_HTTP_REQUIRE_TOKEN`).
+
+## Revisions
+
+Every part answers with an `ETag`. Send it back as `If-Match` on a write, and the write is refused with `412` if the part changed since you read it. `ScreenJSON-Seq` is the script's change counter.
+
+## Errors
+
+```json
+{"error": {"code": "rev_mismatch", "message": "…", "path": "/documents/…", "id": "…", "details": []}}
+```
+
+`code` is one of a fixed set (`not_found`, `rev_mismatch`, `checked_out`, `invalid`, …); `details` point at the fields at fault; `id` is also in the server's log.
