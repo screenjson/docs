@@ -40,7 +40,7 @@ A running server documents itself: `/swagger/` is an explorer where you can try 
 | `GET` `POST` | `/tokens` | Tokens. |
 | `GET` `DELETE` | `/passes/{label}` | A pass's progress. |
 | `GET` | `/status` | What the server runs on, and where to connect for live events. |
-| `GET` `PATCH` | `/config` | The settings in force; change them with the admin key. |
+| `GET` `PATCH` | `/config` | The settings in force; send the admin password as `X-Admin-Password` to read and change them. |
 | `POST` | `/mcp` | The [MCP](/tools/server/mcp) endpoint for AI agents (not part of the REST reference). |
 
 [How the API works](/tools/server/api) explains revisions, moves, checkouts and passes.

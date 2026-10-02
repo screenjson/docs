@@ -27,11 +27,10 @@
       }
     },
     "parameters": {
-      "AdminKey": {
-        "description": "The server's `admin.key`.",
+      "AdminPassword": {
+        "description": "The server's `admin.password`. Needed when the server has one.",
         "in": "header",
-        "name": "X-Admin-Key",
-        "required": true,
+        "name": "X-Admin-Password",
         "schema": {
           "type": "string"
         }
@@ -72,6 +71,14 @@
         "description": "With `pass`, whether the node is finished for the pass. `false` leaves it for another worker.",
         "in": "query",
         "name": "done",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "Facets": {
+        "description": "true adds `facets`: how many documents have each genre, theme and lang, across the library.",
+        "in": "query",
+        "name": "facets",
         "schema": {
           "type": "boolean"
         }
@@ -230,14 +237,6 @@
           ],
           "type": "string"
         }
-      },
-      "Facets": {
-        "name": "facets",
-        "in": "query",
-        "description": "true adds `facets` to the answer: how many documents have each genre, theme and lang, across the library.",
-        "schema": {
-          "type": "boolean"
-        }
       }
     },
     "responses": {
@@ -259,7 +258,7 @@
             }
           }
         },
-        "description": "A token is needed and none (or an unknown one) was sent."
+        "description": "A token is needed and none (or an unknown one) was sent; or, on /config, the admin password is missing or wrong."
       },
       "403": {
         "content": {
@@ -269,7 +268,7 @@
             }
           }
         },
-        "description": "Configuration edits are off (no `admin.key`), or `X-Admin-Key` is missing or wrong."
+        "description": "Configuration edits are off: the server has no `admin.password`."
       },
       "404": {
         "content": {
@@ -648,7 +647,7 @@
       "Config": {
         "properties": {
           "editable": {
-            "description": "Whether `admin.key` is set, so PATCH /config is allowed.",
+            "description": "Whether `admin.password` is set, so PATCH /config is allowed.",
             "type": "boolean"
           },
           "file": {
@@ -3286,14 +3285,19 @@
   "info": {
     "description": "Stores ScreenJSON screenplays and lets many clients read and edit them at once, with every change streamed live.\n\n**Paths follow the document.** A screenplay is a tree, and every part of it has a URL:\n`/documents/{doc}/scenes/{scene}/elements/{type}/{el}` is one line of one scene. Reading a URL returns that part as ScreenJSON;\nwriting to it changes just that part. Lists (`…/scenes`, `…/elements`) take POST to insert.\n\n**Revisions.** Every node answers with an `ETag` holding its revision. Send it back as `If-Match` on a write,\nand the write is refused with 412 if someone changed the node in between. `ScreenJSON-Seq` is the document's change counter.\n\n**Moved and deleted nodes.** A path that names a node's old scene or old type answers 308 with its current path.\nA deleted node answers 410 for a while, then 404.\n\n**Checkouts.** POST `…/checkout` on a node holds it for your token: other tokens get 423 when they try to change it.\nBulk checkouts on a list hand out work to many workers, and a *pass* makes sure each node is done once.\n\n**Live events.** `GET /status` says where to connect (a Centrifugo websocket). Subscribe to `doc:{id}` for a document's changes,\n`library` for the library, or `pass:{label}` for a pass's progress.\n\n**Errors** are JSON: `{\"error\": {\"code\", \"message\", \"path\", \"id\", \"details\"}}`, where `details` point at the fields at fault.\n\n**Tokens.** Create one with POST `/tokens` and send it as `Authorization: Bearer <token>`. They are needed for checkouts,\nand for every request when the server is set to require them.",
     "title": "screenjson-server",
-    "version": "develop"
+    "version": "dev"
   },
   "openapi": "3.1.0",
   "paths": {
     "/config": {
       "get": {
-        "description": "Every setting: its value (secrets masked), where it came from (default, file, env, flag), and whether it can be changed here and applies at once. PATCH changes settings, with the server's `admin.key` as `X-Admin-Key`. The changes are validated together and written into the YAML file when the server has one it can write, keeping its comments; log.level, http.require_token, http.max_body and the Greenlight settings apply at once, the rest at the next start. Settings set by environment variables or flags override the file and are locked. The edit is this replica's: others see it when they next start, if they share the file.",
+        "description": "Every setting: its value (secrets masked), where it came from (default, file, env, flag), and whether it can be changed here and applies at once. When the server has an `admin.password`, both GET and PATCH need it as `X-Admin-Password`; without one, GET is open and PATCH is refused. PATCH changes settings. The changes are validated together and written into the YAML file when the server has one it can write, keeping its comments; log.level, http.require_token, http.max_body and the Greenlight settings apply at once, the rest at the next start. Settings set by environment variables or flags override the file and are locked. The edit is this replica's: others see it when they next start, if they share the file.",
         "operationId": "get_config",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AdminPassword"
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -3305,8 +3309,8 @@
             },
             "description": "OK"
           },
-          "400": {
-            "$ref": "#/components/responses/400"
+          "401": {
+            "$ref": "#/components/responses/401"
           },
           "default": {
             "$ref": "#/components/responses/Error"
@@ -3318,11 +3322,11 @@
         ]
       },
       "patch": {
-        "description": "Every setting: its value (secrets masked), where it came from (default, file, env, flag), and whether it can be changed here and applies at once. PATCH changes settings, with the server's `admin.key` as `X-Admin-Key`. The changes are validated together and written into the YAML file when the server has one it can write, keeping its comments; log.level, http.require_token, http.max_body and the Greenlight settings apply at once, the rest at the next start. Settings set by environment variables or flags override the file and are locked. The edit is this replica's: others see it when they next start, if they share the file.",
+        "description": "Every setting: its value (secrets masked), where it came from (default, file, env, flag), and whether it can be changed here and applies at once. When the server has an `admin.password`, both GET and PATCH need it as `X-Admin-Password`; without one, GET is open and PATCH is refused. PATCH changes settings. The changes are validated together and written into the YAML file when the server has one it can write, keeping its comments; log.level, http.require_token, http.max_body and the Greenlight settings apply at once, the rest at the next start. Settings set by environment variables or flags override the file and are locked. The edit is this replica's: others see it when they next start, if they share the file.",
         "operationId": "patch_config",
         "parameters": [
           {
-            "$ref": "#/components/parameters/AdminKey"
+            "$ref": "#/components/parameters/AdminPassword"
           }
         ],
         "requestBody": {
@@ -3358,6 +3362,9 @@
           },
           "400": {
             "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
           },
           "403": {
             "$ref": "#/components/responses/403"

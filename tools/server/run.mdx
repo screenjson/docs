@@ -78,13 +78,13 @@ Settings come from a YAML file (`SCREENJSON_CONFIG`), environment variables and 
 | `SCREENJSON_GREENLIGHT_API_KEY` | | Greenlight's `SHARED_API_KEY`. |
 | `SCREENJSON_BLOB_DRIVER` | `fs` | Where ScreenJSON exports and mirrors go: `s3`, `minio`, `azure` or `fs`. |
 | `SCREENJSON_HTTP_MCP` | `true` | Serve the MCP endpoint at `/mcp`. |
-| `SCREENJSON_ADMIN_KEY` | | Lets the Status page (and `PATCH /config`) edit settings. Empty means read-only. |
+| `SCREENJSON_ADMIN_PASSWORD` | | Signs in to the web app's Settings page to change settings (sent as `X-Admin-Password` to `/config`). Empty means read-only. |
 | `SCREENJSON_GIT_ENABLED` | `false` | Commit each script to Git. |
 | `SCREENJSON_EVENTS_BACKEND` | `embedded` | `centrifugo` to publish through an external Centrifugo. |
 
 The repository's `docs/CONFIG.md` lists every setting. `screenjson-server config check` prints the settings in force, with secrets masked.
 
-With `admin.key` set, the web app's Status page shows every setting, where it came from, and lets you change the ones not fixed by an environment variable or flag. Changes are written back into the YAML file, keeping its comments.
+With `admin.password` set, signing in to the web app's Settings page shows every setting, where it came from, and lets you change the ones not fixed by an environment variable or flag. Changes are written back into the YAML file, keeping its comments. The password can only be set in the environment or the file, and while it is set, reading the settings needs it too.
 
 The container keeps a small state store (tokens, pass progress and the library index) in `/data`. Give it a volume.
 
