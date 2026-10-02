@@ -27,10 +27,27 @@
       }
     },
     "parameters": {
+      "AdminKey": {
+        "description": "The server's `admin.key`.",
+        "in": "header",
+        "name": "X-Admin-Key",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
       "After": {
         "description": "Insert after the sibling with this UUID.",
         "in": "query",
         "name": "after",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "Batch": {
+        "description": "Only this batch's imports.",
+        "in": "query",
+        "name": "batch",
         "schema": {
           "type": "string"
         }
@@ -59,27 +76,11 @@
           "type": "boolean"
         }
       },
-      "Encrypt": {
-        "description": "Encrypt the text (jscn only; needs the server's encryption key).",
+      "Filename": {
+        "description": "The file's name, when one file is sent as the body. Its extension says what it is.",
         "in": "query",
-        "name": "encrypt",
+        "name": "filename",
         "schema": {
-          "type": "boolean"
-        }
-      },
-      "Format": {
-        "description": "File format. `jscn` is ScreenJSON.",
-        "in": "query",
-        "name": "format",
-        "schema": {
-          "default": "jscn",
-          "enum": [
-            "jscn",
-            "pdf",
-            "fdx",
-            "fadein",
-            "fountain"
-          ],
           "type": "string"
         }
       },
@@ -118,14 +119,6 @@
           "type": "string"
         }
       },
-      "Lang": {
-        "description": "Language to render; the document's own by default.",
-        "in": "query",
-        "name": "lang",
-        "schema": {
-          "type": "string"
-        }
-      },
       "LangFilter": {
         "description": "Only documents in, or containing, this language.",
         "in": "query",
@@ -142,6 +135,27 @@
           "maximum": 1000,
           "minimum": 1,
           "type": "integer"
+        }
+      },
+      "Offset": {
+        "description": "Skip this many documents, for numbered pages. A cursor wins over it.",
+        "in": "query",
+        "name": "offset",
+        "schema": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "Order": {
+        "description": "asc or desc. By default text columns sort ascending, and numbers and updated descending.",
+        "in": "query",
+        "name": "order",
+        "schema": {
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "type": "string"
         }
       },
       "Pass": {
@@ -189,14 +203,11 @@
         }
       },
       "Sort": {
-        "description": "Order: by title (the default) or most recently updated first.",
+        "description": "The column to sort on: title (the default), authors, genre, lang, scenes, elements, bytes or updated. A leading - sorts descending, + ascending.",
         "in": "query",
         "name": "sort",
         "schema": {
-          "enum": [
-            "title",
-            "updated"
-          ],
+          "pattern": "^[+-]?(title|authors|genre|lang|scenes|elements|bytes|updated)$",
           "type": "string"
         }
       },
@@ -218,6 +229,14 @@
             "outline"
           ],
           "type": "string"
+        }
+      },
+      "Facets": {
+        "name": "facets",
+        "in": "query",
+        "description": "true adds `facets` to the answer: how many documents have each genre, theme and lang, across the library.",
+        "schema": {
+          "type": "boolean"
         }
       }
     },
@@ -241,6 +260,16 @@
           }
         },
         "description": "A token is needed and none (or an unknown one) was sent."
+      },
+      "403": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "description": "Configuration edits are off (no `admin.key`), or `X-Admin-Key` is missing or wrong."
       },
       "404": {
         "content": {
@@ -320,7 +349,7 @@
             }
           }
         },
-        "description": "The database can't do this, such as vector search on Mongo."
+        "description": "Not available here: vector search on Mongo, or Greenlight work with no Greenlight configured."
       },
       "502": {
         "content": {
@@ -340,7 +369,7 @@
             }
           }
         },
-        "description": "Not ready: the database isn't answering or the state store isn't open."
+        "description": "Not ready, or no Greenlight server is available right now."
       },
       "Error": {
         "content": {
@@ -424,6 +453,25 @@
               "type": "object"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "AutomationRun": {
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "detail": {
+            "description": "Why it failed.",
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "result": {
+            "description": "What it did: a commit and each remote's push, the mirror's target, or the Greenlight jobs."
           }
         },
         "type": "object"
@@ -592,6 +640,120 @@
             "type": "string"
           },
           "pushed": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "Config": {
+        "properties": {
+          "editable": {
+            "description": "Whether `admin.key` is set, so PATCH /config is allowed.",
+            "type": "boolean"
+          },
+          "file": {
+            "description": "The YAML file the configuration came from; empty when there is none.",
+            "type": "string"
+          },
+          "restart_required": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "settings": {
+            "items": {
+              "properties": {
+                "doc": {
+                  "description": "",
+                  "type": "string"
+                },
+                "editable": {
+                  "type": "boolean"
+                },
+                "env": {
+                  "description": "Its environment variable.",
+                  "type": "string"
+                },
+                "live": {
+                  "description": "A change applies at once; otherwise at the next start.",
+                  "type": "boolean"
+                },
+                "locked": {
+                  "description": "Why it can't be changed here.",
+                  "type": "string"
+                },
+                "path": {
+                  "description": "Such as `greenlight.servers`.",
+                  "type": "string"
+                },
+                "secret": {
+                  "type": "boolean"
+                },
+                "source": {
+                  "enum": [
+                    "default",
+                    "file",
+                    "env",
+                    "flag",
+                    "api"
+                  ],
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "bool",
+                    "int",
+                    "string",
+                    "list",
+                    "size",
+                    "duration",
+                    "layout",
+                    "entries"
+                  ],
+                  "type": "string"
+                },
+                "value": {
+                  "description": "The value in force; secrets masked to their first 5 characters."
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "writable": {
+            "description": "Whether edits are written back to the file. If not, they last until the server stops.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "ConfigChange": {
+        "properties": {
+          "applied": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "changed": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "file": {
+            "description": "",
+            "type": "string"
+          },
+          "restart_required": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "written": {
+            "description": "Whether the change was saved to the YAML file.",
             "type": "boolean"
           }
         },
@@ -815,19 +977,8 @@
       },
       "ExportRequest": {
         "properties": {
-          "encrypt": {
-            "type": "boolean"
-          },
-          "format": {
-            "description": "As for GET …/export.",
-            "type": "string"
-          },
-          "lang": {
-            "description": "",
-            "type": "string"
-          },
           "target": {
-            "description": "Where to write it, e.g. s3://bucket/{doc}-{lang}.pdf.",
+            "description": "Where to write the ScreenJSON, e.g. s3://bucket/scripts/{doc}.json.",
             "type": "string"
           }
         },
@@ -870,6 +1021,198 @@
           "name",
           "version"
         ],
+        "type": "object"
+      },
+      "GreenlightStatus": {
+        "properties": {
+          "available": {
+            "type": "integer"
+          },
+          "configured": {
+            "type": "integer"
+          },
+          "handover": {
+            "enum": [
+              "storage",
+              "upload"
+            ],
+            "type": "string"
+          },
+          "servers": {
+            "items": {
+              "properties": {
+                "checked": {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "error": {
+                  "description": "",
+                  "type": "string"
+                },
+                "index": {
+                  "type": "integer"
+                },
+                "latency_ms": {
+                  "type": "integer"
+                },
+                "up": {
+                  "type": "boolean"
+                },
+                "url": {
+                  "description": "",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "Import": {
+        "properties": {
+          "actor": {
+            "description": "",
+            "type": "string"
+          },
+          "batch": {
+            "description": "",
+            "type": "string"
+          },
+          "bytes": {
+            "type": "integer"
+          },
+          "created": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "doc": {
+            "description": "The document made, once done.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "error": {
+            "description": "Why it failed.",
+            "type": "string"
+          },
+          "filename": {
+            "description": "",
+            "type": "string"
+          },
+          "format": {
+            "enum": [
+              "json",
+              "fountain",
+              "fdx",
+              "fadein",
+              "pdf"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "job": {
+            "description": "The Greenlight job converting it.",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "converting",
+              "done",
+              "failed"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "description": "",
+            "type": "string"
+          },
+          "updated": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "filename",
+          "status"
+        ],
+        "type": "object"
+      },
+      "Job": {
+        "properties": {
+          "doc": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "ended": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "error": {
+            "description": "",
+            "type": "string"
+          },
+          "greenlight_job_id": {
+            "description": "",
+            "type": "string"
+          },
+          "id": {
+            "description": "Pass to GET /jobs/{job}.",
+            "type": "string"
+          },
+          "server": {
+            "description": "The Greenlight server that has it.",
+            "type": "string"
+          },
+          "started": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "description": "queued, then as Greenlight reports it (running, done, failed …).",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "JobRequest": {
+        "properties": {
+          "format": {
+            "description": "Shorthand for an export task.",
+            "enum": [
+              "pdf",
+              "fdx",
+              "fadein",
+              "fountain"
+            ],
+            "type": "string"
+          },
+          "lang": {
+            "description": "Language to export.",
+            "type": "string"
+          },
+          "tasks": {
+            "description": "Greenlight task names, run in order; see GET /greenlight/tasks.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "vars": {
+            "description": "Task variables, passed to Greenlight as they are.",
+            "type": "object"
+          }
+        },
         "type": "object"
       },
       "Layout": {
@@ -1352,6 +1695,152 @@
           "document"
         ],
         "title": "ScreenJSON",
+        "type": "object"
+      },
+      "ScriptSettings": {
+        "properties": {
+          "exports": {
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "formats": {
+                "items": {
+                  "properties": {
+                    "format": {
+                      "enum": [
+                        "pdf",
+                        "fdx",
+                        "fadein",
+                        "fountain"
+                      ],
+                      "type": "string"
+                    },
+                    "lang": {
+                      "description": "",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "format"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "idle": {
+                "description": "",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "git": {
+            "properties": {
+              "auto_commit": {
+                "description": "Commit after the script has been idle for idle.",
+                "type": "boolean"
+              },
+              "auto_push": {
+                "description": "Push to every remote after each commit.",
+                "type": "boolean"
+              },
+              "branch": {
+                "description": "main by default.",
+                "type": "string"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "file": {
+                "description": "screenplay.jscn by default.",
+                "type": "string"
+              },
+              "idle": {
+                "description": "How long to wait after the last change, e.g. 30s.",
+                "type": "string"
+              },
+              "include_analysis": {
+                "type": "boolean"
+              },
+              "remotes": {
+                "items": {
+                  "properties": {
+                    "credential": {
+                      "description": "An account's name in the server's git.credentials.",
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "e.g. origin, gitlab",
+                      "type": "string"
+                    },
+                    "url": {
+                      "description": "The repository's URL.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "url"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "mirror": {
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "idle": {
+                "description": "",
+                "type": "string"
+              },
+              "target": {
+                "description": "Where to keep the ScreenJSON: s3://, azure:// or file://, with {doc} and {lang} filled in.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "updated": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updated_by": {
+            "description": "",
+            "type": "string"
+          },
+          "webhooks": {
+            "items": {
+              "properties": {
+                "events": {
+                  "description": "text.changed, node.inserted, node.removed, node.moved, node.updated, document.deleted; empty means all.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "secret": {
+                  "description": "Signs deliveries; shown masked.",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "Where to POST.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "url"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
         "type": "object"
       },
       "SearchRequest": {
@@ -2801,6 +3290,91 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/config": {
+      "get": {
+        "description": "Every setting: its value (secrets masked), where it came from (default, file, env, flag), and whether it can be changed here and applies at once. PATCH changes settings, with the server's `admin.key` as `X-Admin-Key`. The changes are validated together and written into the YAML file when the server has one it can write, keeping its comments; log.level, http.require_token, http.max_body and the Greenlight settings apply at once, the rest at the next start. Settings set by environment variables or flags override the file and are locked. The edit is this replica's: others see it when they next start, if they share the file.",
+        "operationId": "get_config",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Config"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Get the configuration",
+        "tags": [
+          "System"
+        ]
+      },
+      "patch": {
+        "description": "Every setting: its value (secrets masked), where it came from (default, file, env, flag), and whether it can be changed here and applies at once. PATCH changes settings, with the server's `admin.key` as `X-Admin-Key`. The changes are validated together and written into the YAML file when the server has one it can write, keeping its comments; log.level, http.require_token, http.max_body and the Greenlight settings apply at once, the rest at the next start. Settings set by environment variables or flags override the file and are locked. The edit is this replica's: others see it when they next start, if they share the file.",
+        "operationId": "patch_config",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AdminKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "settings": {
+                    "additionalProperties": true,
+                    "description": "Settings by path, such as `log.level` or `greenlight.servers`, each with its new value: text, true/false, a number, or a list of text. A secret sent back masked is left as it was.",
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "settings"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigChange"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Change the configuration",
+        "tags": [
+          "System"
+        ]
+      }
+    },
     "/documents": {
       "get": {
         "description": "The library. Listing reads the document index, so it is fast whatever the database; it returns index entries (title, authors, counts, languages), not whole documents. Importing takes a whole ScreenJSON document, checks it against the schema, fills in any missing UUIDs, and returns it.",
@@ -2822,10 +3396,19 @@
             "$ref": "#/components/parameters/Sort"
           },
           {
+            "$ref": "#/components/parameters/Order"
+          },
+          {
             "$ref": "#/components/parameters/Limit"
           },
           {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
             "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Facets"
           }
         ],
         "responses": {
@@ -2834,6 +3417,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
+                    "facets": {
+                      "additionalProperties": {
+                        "additionalProperties": {
+                          "type": "integer"
+                        },
+                        "type": "object"
+                      },
+                      "description": "With facets=true: how many documents have each genre, theme and lang, across the library.",
+                      "type": "object"
+                    },
                     "items": {
                       "items": {
                         "$ref": "#/components/schemas/DocumentEntry"
@@ -2846,6 +3439,14 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "offset": {
+                      "description": "Where this page starts.",
+                      "type": "integer"
+                    },
+                    "total": {
+                      "description": "How many documents match, across all pages.",
+                      "type": "integer"
                     }
                   },
                   "required": [
@@ -4837,6 +5438,108 @@
         "summary": "Replace an author",
         "tags": [
           "People and references"
+        ]
+      }
+    },
+    "/documents/{doc}/automation": {
+      "get": {
+        "description": "GET says what the script's settings last made happen on this replica, and what is waiting for it to go idle. POST {\"run\": \"git\" | \"mirror\" | \"exports\"} runs one now.",
+        "operationId": "get_automation",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "pending": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "runs": {
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/AutomationRun"
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "What the script's settings made happen",
+        "tags": [
+          "Script settings"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "Document UUID. \"-\" means any document, on list reads and bulk checkouts.",
+          "in": "path",
+          "name": "doc",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "description": "GET says what the script's settings last made happen on this replica, and what is waiting for it to go idle. POST {\"run\": \"git\" | \"mirror\" | \"exports\"} runs one now.",
+        "operationId": "post_automation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "run": {
+                    "enum": [
+                      "git",
+                      "mirror",
+                      "exports"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "run"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRun"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Run a script automation now",
+        "tags": [
+          "Script settings"
         ]
       }
     },
@@ -8523,48 +9226,14 @@
     },
     "/documents/{doc}/export": {
       "get": {
-        "description": "Downloads the document as a file. `jscn` is canonical ScreenJSON; the other formats are rendered by the screenjson CLI. With no `lang`, the document's own language is used.",
+        "description": "Downloads the whole document as ScreenJSON, rebuilt from its records in canonical form. Other formats are Greenlight jobs: POST …/jobs.",
         "operationId": "get_export",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/Format"
-          },
-          {
-            "$ref": "#/components/parameters/Lang"
-          },
-          {
-            "$ref": "#/components/parameters/Encrypt"
-          }
-        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ScreenJSON"
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "format": "binary",
-                  "type": "string"
-                }
-              },
-              "application/pdf": {
-                "schema": {
-                  "format": "binary",
-                  "type": "string"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "format": "binary",
-                  "type": "string"
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "type": "string"
                 }
               }
             },
@@ -8577,7 +9246,7 @@
             "$ref": "#/components/responses/Error"
           }
         },
-        "summary": "Download an export",
+        "summary": "Download as ScreenJSON",
         "tags": [
           "Exports and Git"
         ]
@@ -8607,7 +9276,7 @@
         }
       ],
       "post": {
-        "description": "Renders the document and writes it to object storage: `s3://`, `azure://` or `file://`. `{doc}` and `{lang}` in the target are filled in.",
+        "description": "Writes the whole document as ScreenJSON to object storage: `s3://`, `azure://` or `file://`. `{doc}` and `{lang}` in the target are filled in.",
         "operationId": "post_exports",
         "requestBody": {
           "content": {
@@ -8640,7 +9309,7 @@
             "$ref": "#/components/responses/Error"
           }
         },
-        "summary": "Export to storage",
+        "summary": "Write ScreenJSON to storage",
         "tags": [
           "Exports and Git"
         ]
@@ -9016,6 +9685,109 @@
         "summary": "Replace the document's genre",
         "tags": [
           "Documents"
+        ]
+      }
+    },
+    "/documents/{doc}/jobs": {
+      "get": {
+        "description": "POST hands the document to Greenlight to run CLI tasks on: give a `format` (pdf, fdx, fadein, fountain) or name Greenlight `tasks`. The answer is the job, with its ID. GET lists the document's recent jobs from every available Greenlight server.",
+        "operationId": "get_jobs",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "$ref": "#/components/schemas/Job"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "List a document's Greenlight jobs",
+        "tags": [
+          "Greenlight jobs"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "Document UUID. \"-\" means any document, on list reads and bulk checkouts.",
+          "in": "path",
+          "name": "doc",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "description": "POST hands the document to Greenlight to run CLI tasks on: give a `format` (pdf, fdx, fadein, fountain) or name Greenlight `tasks`. The answer is the job, with its ID. GET lists the document's recent jobs from every available Greenlight server.",
+        "operationId": "post_jobs",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Accepted",
+            "headers": {
+              "Location": {
+                "$ref": "#/components/headers/Location"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          },
+          "502": {
+            "$ref": "#/components/responses/502"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Run Greenlight tasks on a document",
+        "tags": [
+          "Greenlight jobs"
         ]
       }
     },
@@ -18110,6 +18882,82 @@
         ]
       }
     },
+    "/documents/{doc}/settings": {
+      "get": {
+        "description": "The script's settings. Webhook secrets are shown as their first 5 characters; sending a masked secret back keeps the stored one. A Git remote names an account from the server's git.credentials rather than holding a token.",
+        "operationId": "get_settings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptSettings"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Get the script's settings",
+        "tags": [
+          "Script settings"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "Document UUID. \"-\" means any document, on list reads and bulk checkouts.",
+          "in": "path",
+          "name": "doc",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "description": "The script's settings. Webhook secrets are shown as their first 5 characters; sending a masked secret back keeps the stored one. A Git remote names an account from the server's git.credentials rather than holding a token.",
+        "operationId": "put_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScriptSettings"
+              }
+            }
+          },
+          "description": "The whole settings object.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptSettings"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Replace the script's settings",
+        "tags": [
+          "Script settings"
+        ]
+      }
+    },
     "/documents/{doc}/sources": {
       "get": {
         "description": "Works the screenplay is based on.",
@@ -19022,6 +19870,69 @@
         ]
       }
     },
+    "/greenlight": {
+      "get": {
+        "description": "Each configured Greenlight server, and whether it answered its last ping.",
+        "operationId": "get_greenlight",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GreenlightStatus"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Greenlight servers",
+        "tags": [
+          "Greenlight jobs"
+        ]
+      }
+    },
+    "/greenlight/tasks": {
+      "get": {
+        "description": "The tasks Greenlight can run, as Greenlight lists them, from an available server. Each task with a known Iconify icon also gets `icon_svg`, the icon drawn as an SVG element in currentColor.",
+        "operationId": "get_greenlight_tasks",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Greenlight's task catalogue, as it sends it.",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Greenlight's tasks",
+        "tags": [
+          "Greenlight jobs"
+        ]
+      }
+    },
     "/healthz": {
       "get": {
         "description": "200 while the process is alive.",
@@ -19055,6 +19966,329 @@
           "System"
         ]
       }
+    },
+    "/imports": {
+      "get": {
+        "description": "POST takes files as multipart `file` parts (with an optional `batch` name), or one file as the body with `?filename=`. Each file gets an import record: ScreenJSON is stored at once (`done`); Fountain, Final Draft, Fade In and PDF go to Greenlight to convert (`converting`) and are stored when the job finishes. Any replica may pick up a finished conversion. GET lists recent imports, newest first, with counts by status.",
+        "operationId": "get_imports",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Batch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "counts": {
+                      "additionalProperties": {
+                        "type": "integer"
+                      },
+                      "type": "object"
+                    },
+                    "items": {
+                      "items": {
+                        "$ref": "#/components/schemas/Import"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "List imports",
+        "tags": [
+          "Imports"
+        ]
+      },
+      "post": {
+        "description": "POST takes files as multipart `file` parts (with an optional `batch` name), or one file as the body with `?filename=`. Each file gets an import record: ScreenJSON is stored at once (`done`); Fountain, Final Draft, Fade In and PDF go to Greenlight to convert (`converting`) and are stored when the job finishes. Any replica may pick up a finished conversion. GET lists recent imports, newest first, with counts by status.",
+        "operationId": "post_imports",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Filename"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "batch": {
+                    "description": "A name to group these files under, so their progress can be listed together.",
+                    "type": "string"
+                  },
+                  "file": {
+                    "items": {
+                      "format": "binary",
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "$ref": "#/components/schemas/Import"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Import files",
+        "tags": [
+          "Imports"
+        ]
+      }
+    },
+    "/imports/{id}": {
+      "get": {
+        "description": "One import: its status, the document it made, or why it failed.",
+        "operationId": "get_import",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Import"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Get an import",
+        "tags": [
+          "Imports"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "UUID of the item.",
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/jobs/{job}": {
+      "get": {
+        "description": "A job's progress, asked of the Greenlight server that has it. The ID says which server that is, so any replica of this server can answer.",
+        "operationId": "get_job",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "502": {
+            "$ref": "#/components/responses/502"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Get a Greenlight job",
+        "tags": [
+          "Greenlight jobs"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "",
+          "in": "path",
+          "name": "job",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/jobs/{job}/outputs": {
+      "get": {
+        "description": "The files the job produced.",
+        "operationId": "get_job_outputs",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "name": {
+                            "description": "",
+                            "type": "string"
+                          },
+                          "size": {
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "status": {
+                      "description": "",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "502": {
+            "$ref": "#/components/responses/502"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "List a job's files",
+        "tags": [
+          "Greenlight jobs"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "",
+          "in": "path",
+          "name": "job",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/jobs/{job}/outputs/{file}": {
+      "get": {
+        "description": "One file the job produced, streamed from Greenlight.",
+        "operationId": "get_job_output",
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "502": {
+            "$ref": "#/components/responses/502"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Download a job's file",
+        "tags": [
+          "Greenlight jobs"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "",
+          "in": "path",
+          "name": "job",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "",
+          "in": "path",
+          "name": "file",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
     },
     "/metrics": {
       "get": {
@@ -19500,8 +20734,8 @@
   ],
   "servers": [
     {
-      "url": "http://localhost:8080",
-      "description": "A local container"
+      "description": "This server",
+      "url": "/"
     }
   ],
   "tags": [
@@ -19538,8 +20772,20 @@
       "name": "Search"
     },
     {
-      "description": "Files rendered from a document (PDF, Final Draft, Fade In, Fountain, ScreenJSON), and Git commits of it.",
+      "description": "The whole document as ScreenJSON, rebuilt from the database, as a download or written to object storage; and Git commits of it.",
       "name": "Exports and Git"
+    },
+    {
+      "description": "Each script's own settings: webhooks to call when it changes, its Git repository (remotes on GitHub, GitLab or Bitbucket, committed and pushed after it goes idle), a copy kept in object storage, and exports Greenlight runs after it goes idle. Kept in the shared database, so every replica sees the same ones.",
+      "name": "Script settings"
+    },
+    {
+      "description": "Work the screenjson CLI does (PDF, Final Draft, Fade In and Fountain exports, validation, encryption) runs on Greenlight, a sibling service, as queued jobs. The server hands a document over, follows the job and serves what it produced. When no Greenlight server is up, these routes answer 503 and everything else carries on.",
+      "name": "Greenlight jobs"
+    },
+    {
+      "description": "Bulk import: send many screenplay files at once (ScreenJSON, Fountain, Final Draft, Fade In, PDF). ScreenJSON is stored straight away; the others are converted by Greenlight in the background and stored as each finishes.",
+      "name": "Imports"
     },
     {
       "description": "Tokens name who is making a request. They are needed for checkouts, and for everything when the server requires them.",

@@ -1,0 +1,69 @@
+---
+title: MCP
+description: Connect Claude, Cursor or any Model Context Protocol client to a screenjson-server library.
+---
+
+`POST /mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server, using the streamable HTTP transport. It's stateless, so it needs nothing beyond the request.
+
+Every tool is a call to the server's own API, made with the MCP client's `Authorization` header. Tokens, checkouts, `If-Match` revisions and schema validation apply to an agent exactly as to any other client, and its edits appear live in the web app.
+
+## Connect
+
+<CodeGroup>
+```bash Claude Code
+claude mcp add --transport http screenjson http://127.0.0.1:8080/mcp \
+  --header "Authorization: Bearer $TOKEN"
+```
+
+```json Other clients
+{
+  "mcpServers": {
+    "screenjson": {
+      "url": "http://127.0.0.1:8080/mcp",
+      "headers": { "Authorization": "Bearer <token>" }
+    }
+  }
+}
+```
+</CodeGroup>
+
+Make a token with `POST /tokens` (`{"name": "claude"}`), so the agent's edits and checkouts carry its own name.
+
+## Tools
+
+| Tool | Does |
+|---|---|
+| `list_documents` | List the library. |
+| `get_outline` | A script's scenes and headings. |
+| `read_scene` | One scene with its elements. |
+| `search` | Full-text or vector search. |
+| `edit_element` | Change a line. |
+| `insert_element` | Add a line to a scene. |
+| `insert_scene` | Add a scene. |
+| `edit_scene_heading` | Change a slugline. |
+| `move_node` | Move a scene or line. |
+| `delete_node` | Remove a scene or line. |
+| `checkout`, `release` | Hold a part while working on it, then let it go. |
+| `import_screenjson` | Add a ScreenJSON document to the library. |
+| `export_screenjson` | Get a script as ScreenJSON. |
+| `run_export_job`, `get_job` | Have Greenlight export a PDF, Final Draft, Fade In or Fountain file, and follow the job. |
+| `get_script_settings`, `update_script_settings` | A script's [settings](/tools/server/settings). |
+| `server_status` | What the server runs on. |
+| `api_request` | Any other route of the API. |
+
+## Many agents at once
+
+Give each agent its own token, so its edits and checkouts carry its own name. Then several agents can work on the same scripts together:
+
+- **Revisions.** An edit to a line someone else changed since the agent read it is refused (`412`). The agent reads the line again and retries; nothing is silently overwritten.
+- **Checkouts.** An agent reworking a whole scene can `checkout` it first. Other tokens get `423` on that scene until it calls `release` or the checkout expires.
+- **Validation.** Every write is checked against the ScreenJSON schema, so an agent can't leave a script broken.
+- **Order.** Writes to one script are applied one at a time, so concurrent edits to different lines all land.
+
+For one job across a whole library, use a pass: the agent asks for a batch with `api_request` (`POST /documents/-/scenes/-/elements/dialogue/checkout` with `{"limit": 20, "pass": "…"}`), writes each line back with `?pass=…&release=true`, and the server makes sure no two agents get the same line. See [Passes](/tools/server/api#passes-sharing-out-a-big-job).
+
+Every agent's edits appear live in the web app and on the script's event channel, with the agent's token name as `actor`.
+
+## Turn it off
+
+Set `http.mcp: false` (`SCREENJSON_HTTP_MCP=false`) and `/mcp` is not served.

@@ -1,50 +1,92 @@
 ---
 title: Import and export
-description: Bring scripts in from Final Draft, Fade In or Fountain, and get them out as PDF, files in cloud storage, or Git history.
+description: Bring scripts in from ScreenJSON, Final Draft, Fade In, Fountain or PDF, and get them out as files, cloud objects, Greenlight exports or Git history.
 ---
+
+The server stores ScreenJSON. Anything in another format goes through [Greenlight](/tools/greenlight/overview), which the server finds through `greenlight.servers` (up to five; it checks them regularly and sends work only to ones that are up).
 
 ## Bringing scripts in
 
-The server stores ScreenJSON. Convert other formats with [screenjson-cli](/tools/cli/convert) first, then send the result:
+### One ScreenJSON document
 
 ```bash
-screenjson convert -i script.fountain -o script.json
-curl -X POST http://127.0.0.1:8080/documents --data-binary @script.json
+curl -X POST http://127.0.0.1:8080/documents \
+     -H "Authorization: Bearer $T" --data-binary @script.json
 ```
 
-The server checks the whole document against the ScreenJSON schema, gives any part without an ID one, and answers `201` with the stored document. For a folder of converted scripts, `screenjson-server import` sends them all.
+The server checks the whole document against the ScreenJSON schema, gives any part without an ID one, and answers `201` with the stored document.
+
+### Many files, any format
+
+`POST /imports` takes files as multipart `file` parts, or one file as the body with `?filename=`. The **Import** page of the web app does the same with drag and drop.
+
+```bash
+curl -X POST http://127.0.0.1:8080/imports -H "Authorization: Bearer $T" \
+     -F batch=season-2 -F file=@ep201.fdx -F file=@ep202.fountain -F file=@ep203.json
+```
+
+Each file gets an import record:
+
+| Status | Meaning |
+|---|---|
+| `done` | Stored. ScreenJSON is stored at once; the record names the new document. |
+| `converting` | A Final Draft, Fade In, Fountain or PDF file sent to Greenlight. It is stored when the job finishes. |
+| `failed` | With the reason: invalid ScreenJSON, a failed conversion, no Greenlight configured. |
+
+`GET /imports?batch=season-2` lists recent imports with counts by status; `GET /imports/{id}` shows one.
+
+### A whole back catalogue
+
+For thousands of converted `.json` files, load them straight into the database while the server is stopped:
+
+- `screenjson-server import --offline ./converted/` with the server's own configuration, or
+- the free [screenjson-db-importer](/tools/importer/overview), which writes the same records with a resume manifest and a worker pool.
+
+Without `--offline`, `screenjson-server import` sends the files to a running server (`--server`, default `http://127.0.0.1:8080`).
 
 ## Getting scripts out
 
-Download a script in any format the CLI writes:
+### ScreenJSON
 
 ```bash
-curl -o script.pdf "http://127.0.0.1:8080/documents/$DOC/export?format=pdf"
+curl -o script.json "http://127.0.0.1:8080/documents/$DOC/export?lang=fr"
 ```
 
-| `format` | File |
-|---|---|
-| `jscn` (default) | ScreenJSON, in canonical form |
-| `pdf` | PDF, US Letter, Courier |
-| `fdx` | Final Draft |
-| `fadein` | Fade In |
-| `fountain` | Fountain |
+The whole document, rebuilt from its records in canonical form. Without `lang`, the document's own language.
 
-`lang` picks the language of a multilingual script; `encrypt=true` encrypts the text (ScreenJSON only). Encrypted scripts are decrypted for export with the server's key.
-
-To write the file to cloud storage instead, `POST …/exports` with a target:
+To write it to cloud storage instead:
 
 ```bash
 curl -X POST "http://127.0.0.1:8080/documents/$DOC/exports" \
-     -d '{"format": "pdf", "target": "s3://scripts/{doc}-{lang}.pdf"}'
+     -d '{"target": "s3://scripts/{doc}-{lang}.json"}'
 ```
 
-Targets are `s3://`, `azure://` or `file://`; `{doc}` and `{lang}` are filled in.
+Targets are `s3://`, `azure://` or `file://` (`file://` stays under `blob.root` when that is set); `{doc}` and `{lang}` are filled in.
+
+### PDF, Final Draft, Fade In, Fountain
+
+Other formats are Greenlight jobs. Asking `…/export` for one answers `422` pointing here.
+
+```bash
+JOB=$(curl -s -X POST "http://127.0.0.1:8080/documents/$DOC/jobs" \
+      -d '{"format": "pdf", "lang": "en"}' -D - -o /dev/null | awk '/^Location/ {print $2}' | tr -d '\r')
+curl -s "http://127.0.0.1:8080$JOB"            # picked, starting, finished or error
+curl -s "http://127.0.0.1:8080$JOB/outputs"    # the files it made
+```
+
+`format` is `pdf`, `fdx`, `fadein` or `fountain`. Instead of a format, `{"tasks": [...]}` runs any of Greenlight's tasks (`GET /greenlight/tasks` lists them). `GET /jobs/{job}/outputs/{file}` streams a result from Greenlight.
+
+The document reaches Greenlight through its input bucket (`greenlight.handover: storage`, the default, with the `greenlight.s3` settings) or its upload endpoint (`upload`). With no Greenlight configured the answer is `501`; with none up, `503 greenlight_unavailable`.
 
 ## Git history
 
-With Git export on (`SCREENJSON_GIT_ENABLED=true` and a remote), `POST …/commits` commits a script's current state, and the server can commit on its own after a script has been idle. Each script is written the same way every time, so a one-word change is a one-line diff. Git is export only: edits made in the repository are never read back.
+`POST /documents/{doc}/commits` commits a script's current state; `GET` lists its commits. Each script is written the same way every time, so a one-word change is a one-line diff.
+
+- With the script's own [Git settings](/tools/server/settings), the commit goes to its own repository and remotes.
+- Otherwise, with the server-wide `git.enabled` and `git.remote`, it goes to the server's repository.
+
+Git is export only: edits made in the repository are never read back.
 
 ## Webhooks
 
-The server can tell other services when text changes: a signed `POST` of the changed line, with a link to send a computed embedding back. Receivers, events and secrets are set in the configuration file's `webhooks` list.
+Receivers in the configuration file's `webhooks` list hear about every script; a script's own [settings](/tools/server/settings) can add receivers for that script alone. Each gets a `POST` for the events it lists (`text.changed`, `node.inserted`, `node.removed`, `node.moved`, `node.updated`, `document.created`, `document.deleted`), signed with `ScreenJSON-Signature: sha256=<hex HMAC>` when it has a secret. `text.changed` includes an `embed_url` to send a computed vector back to.

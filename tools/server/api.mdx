@@ -29,6 +29,10 @@ Reading an address returns that part as ScreenJSON. Writing to it changes that p
 
 Other lists hang off the document the same way: `/authors`, `/characters`, `/bookmarks`, `/cover`, `/layout` and so on.
 
+## The library
+
+`GET /documents` lists the library from an index, so it is fast whatever the database. Filter with `q` (titles and loglines), `genre`, `theme` and `lang`; sort on any column with `sort` (`title`, `authors`, `genre`, `lang`, `scenes`, `elements`, `bytes` or `updated`, with a leading `-` for descending); page with `limit` and `offset` or `cursor`. `facets=true` adds how many documents have each genre, theme and language.
+
 ## Nobody overwrites anybody
 
 Every part answers with an `ETag`, its revision number. When you write, send it back as `If-Match`:

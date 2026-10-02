@@ -18,7 +18,7 @@ A running server documents itself: `/swagger/` is an explorer where you can try 
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` `POST` | `/documents` | List the library; import a script. |
+| `GET` `POST` | `/documents` | List the library (`q`, `genre`, `theme`, `lang`, `sort`, `order`, `offset`, `facets`); add a ScreenJSON document. |
 | `GET` `PUT` `PATCH` `DELETE` | `/documents/{doc}` | One script. |
 | `GET` `POST` | `/documents/{doc}/scenes` | Its scenes; insert one. |
 | `GET` `PUT` `PATCH` `DELETE` | `/documents/{doc}/scenes/{scene}` | One scene. |
@@ -27,13 +27,21 @@ A running server documents itself: `/swagger/` is an explorer where you can try 
 | `POST` `PUT` `DELETE` | `…/checkout` | Hold, renew or release a part. On a list, hand out a batch. |
 | `POST` | `…/move` | Move a scene or line. |
 | `GET` `PUT` `DELETE` | `…/embeddings/{model}` | Vectors computed from a part's text. |
-| `GET` | `/documents/{doc}/export` | Download as PDF, FDX, Fade In, Fountain or ScreenJSON. |
-| `POST` | `/documents/{doc}/exports` | Write an export to cloud storage. |
+| `GET` | `/documents/{doc}/export` | Download as ScreenJSON. |
+| `POST` | `/documents/{doc}/exports` | Write the ScreenJSON to cloud storage. |
+| `GET` `POST` | `/documents/{doc}/jobs` | Greenlight jobs: PDF, FDX, Fade In or Fountain exports, or any Greenlight task. |
+| `GET` | `/jobs/{job}`, `/jobs/{job}/outputs[/{file}]` | A job's progress and the files it made. |
+| `GET` | `/greenlight`, `/greenlight/tasks` | The Greenlight servers, and what they can run. |
+| `GET` `POST` | `/imports`, `/imports/{id}` | Import files in any format; follow their progress. |
+| `GET` `PUT` | `/documents/{doc}/settings` | The script's webhooks, Git, mirror and automatic exports. |
+| `GET` `POST` | `/documents/{doc}/automation` | What those settings last did; run one now. |
 | `GET` `POST` | `/documents/{doc}/commits` | Git history; commit. |
 | `POST` | `/search` | Full-text or vector search. |
 | `GET` `POST` | `/tokens` | Tokens. |
 | `GET` `DELETE` | `/passes/{label}` | A pass's progress. |
 | `GET` | `/status` | What the server runs on, and where to connect for live events. |
+| `GET` `PATCH` | `/config` | The settings in force; change them with the admin key. |
+| `POST` | `/mcp` | The [MCP](/tools/server/mcp) endpoint for AI agents (not part of the REST reference). |
 
 [How the API works](/tools/server/api) explains revisions, moves, checkouts and passes.
 

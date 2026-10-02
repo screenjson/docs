@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "ScreenJSON",
-  "description": "Reference documentation for the ScreenJSON toolchain — schema, CLI tools, viewer, and Greenlight batch microservice.",
+  "description": "Reference documentation for the ScreenJSON toolchain — schema, CLI tools, database importer, server, viewer, and Greenlight batch microservice.",
   "colors": {
     "primary": "#6a1ef0",
     "light":   "#a97dff",
@@ -81,12 +81,24 @@
             ]
           },
           {
+            "group": "screenjson-db-importer",
+            "pages": [
+              "tools/importer/overview",
+              "tools/importer/install",
+              "tools/importer/usage",
+              "tools/importer/configuration",
+              "tools/importer/layouts"
+            ]
+          },
+          {
             "group": "screenjson-server",
             "pages": [
               "tools/server/overview",
               "tools/server/run",
+              "tools/server/mcp",
               "tools/server/api",
-              "tools/server/import-export"
+              "tools/server/import-export",
+              "tools/server/settings"
             ]
           },
           {

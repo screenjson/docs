@@ -84,6 +84,34 @@ Embeddable browser viewer.
   </Tab>
 </Tabs>
 
+## screenjson-db-importer
+
+Free, open-source CLI. Loads ScreenJSON into PostgreSQL, MongoDB, Elasticsearch, Chroma, Weaviate or Pinecone. See [screenjson-db-importer → Install](/tools/importer/install).
+
+<Tabs>
+  <Tab title="Docker">
+    ```bash
+    docker pull ghcr.io/screenjson/screenjson-db-importer:latest
+    ```
+  </Tab>
+  <Tab title="From source">
+    ```bash
+    git clone https://github.com/screenjson/screenjson-db-importer.git
+    cd screenjson-db-importer
+    go build -o screenjson-db-importer .
+    ```
+  </Tab>
+</Tabs>
+
+## screenjson-server
+
+Commercial; [contact us](mailto:hello@screenjson.com?subject=screenjson-server) for a license. Runs as one container. See [screenjson-server → Run it](/tools/server/run).
+
+```bash
+docker run --rm -p 127.0.0.1:8080:8080 -e SCREENJSON_STORAGE_DRIVER=memory \
+  ghcr.io/screenjson/screenjson-server:latest
+```
+
 ## Greenlight
 
 Batch microservice. See [Greenlight → Deploy](/tools/greenlight/deploy) for the full instructions.

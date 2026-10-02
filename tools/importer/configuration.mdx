@@ -1,0 +1,94 @@
+---
+title: Configuration
+description: Every setting screenjson-db-importer reads, for databases and source storage.
+---
+
+Settings come from, highest precedence first: `--set path=value` flags, environment variables, the YAML file (`--config` or `SCREENJSON_CONFIG`), then the defaults below. In the YAML file, `${VAR}` and `${VAR:-default}` are filled in from the environment, so secrets can stay out of the file.
+
+The file format is screenjson-server's. The importer reads the database and blob settings and ignores the server's own (HTTP, events, Git, Greenlight), so one file can serve both.
+
+## Examples
+
+<CodeGroup>
+```yaml PostgreSQL
+data_dir: /data/.screenjson-importer
+
+storage:
+  driver: postgres
+  url: postgres://screenjson:${PGPASSWORD}@database:5432/screenplays?sslmode=disable
+  layout: scenes
+  transactions: true
+
+blob:
+  driver: fs
+  root: /data
+```
+
+```yaml MongoDB
+data_dir: /data/.screenjson-importer
+
+storage:
+  driver: mongo
+  url: mongodb://database:27017
+  database: screenplays
+  layout: elements
+```
+
+```yaml Pinecone, from S3
+data_dir: /data/.screenjson-importer
+
+storage:
+  driver: pinecone
+  url: https://screenplays-abc123.svc.us-east-1.pinecone.io
+  pinecone:
+    api_key: ${PINECONE_API_KEY}
+    namespace: library
+  layout:
+    root:     {collection: screenplays}
+    scenes:   {collection: scenes, vector: {model: text-embedding-3-small, dimensions: 1536}}
+
+blob:
+  driver: s3
+  region: us-east-1
+  bucket: converted-scripts
+  access_key: ${AWS_ACCESS_KEY_ID}
+  secret_key: ${AWS_SECRET_ACCESS_KEY}
+```
+</CodeGroup>
+
+## Database
+
+| Setting | Environment variable | Default | Meaning |
+|---|---|---|---|
+| `data_dir` | `SCREENJSON_DATA_DIR` | `/data` | Local directory for the importer's state and its lock. |
+| `storage.driver` | `SCREENJSON_STORAGE_DRIVER` | `memory` | `memory`, `mongo`, `postgres`, `elastic`, `chroma`, `weaviate` or `pinecone`. |
+| `storage.url` | `SCREENJSON_STORAGE_URL` | | The database URL. Required except for `memory`. For Pinecone, the index host. |
+| `storage.database` | `SCREENJSON_STORAGE_DATABASE` | | Database name, where the driver has one. |
+| `storage.transactions` | `SCREENJSON_STORAGE_TRANSACTIONS` | driver default | Write each document's records in one transaction. MongoDB (on a replica set) and PostgreSQL only. |
+| `storage.envelope_field` | `SCREENJSON_STORAGE_ENVELOPE_FIELD` | `sj` | Field holding the record envelope on MongoDB and Elasticsearch. |
+| `storage.allow_large_records` | `SCREENJSON_STORAGE_ALLOW_LARGE_RECORDS` | `false` | Let Chroma, Weaviate or Pinecone keep a whole screenplay in one record. |
+| `storage.layout` | `SCREENJSON_STORAGE_LAYOUT` | `elements` | `whole`, `scenes`, `elements`, or a map. See [Storage layouts](/tools/importer/layouts). In the environment, a preset name or JSON. |
+| `storage.elastic.refresh` | `SCREENJSON_STORAGE_ELASTIC_REFRESH` | `wait_for` | Elasticsearch refresh mode: `wait_for`, `true` or `false`. |
+| `storage.chroma.tenant` | `SCREENJSON_STORAGE_CHROMA_TENANT` | `default_tenant` | Chroma tenant. |
+| `storage.chroma.database` | `SCREENJSON_STORAGE_CHROMA_DATABASE` | `default_database` | Chroma database. |
+| `storage.weaviate.class_prefix` | `SCREENJSON_STORAGE_WEAVIATE_CLASS_PREFIX` | `Sj` | Prefix for Weaviate collection names. |
+| `storage.pinecone.api_key` | `SCREENJSON_STORAGE_PINECONE_API_KEY` | | Pinecone API key. |
+| `storage.pinecone.namespace` | `SCREENJSON_STORAGE_PINECONE_NAMESPACE` | | Prefix for the namespaces; each collection gets its own namespace under it. |
+
+<Note>
+**Pinecone** needs an existing dense serverless index. Its dimension is authoritative: any vector a layout declares must match it. Records without an embedding are stored with a zero vector marked as non-native, and Pinecone has no full-text search.
+</Note>
+
+## Source storage
+
+Where `s3://`, `azure://` and `file://` sources are read from.
+
+| Setting | Environment variable | Default | Meaning |
+|---|---|---|---|
+| `blob.driver` | `SCREENJSON_BLOB_DRIVER` | `fs` | `fs`, `s3`, `minio` or `azure`. |
+| `blob.endpoint` | `SCREENJSON_BLOB_ENDPOINT` | | S3-compatible endpoint (MinIO, Spaces); empty for AWS S3. |
+| `blob.region` | `SCREENJSON_BLOB_REGION` | `us-west-2` | S3 region. |
+| `blob.bucket` | `SCREENJSON_BLOB_BUCKET` | | Default bucket, when a URI names none. |
+| `blob.access_key` | `SCREENJSON_BLOB_ACCESS_KEY` | | S3 or MinIO access key; the account name for Azure. |
+| `blob.secret_key` | `SCREENJSON_BLOB_SECRET_KEY` | | S3 or MinIO secret key; the account key for Azure. |
+| `blob.root` | `SCREENJSON_BLOB_ROOT` | | Base directory for the `fs` driver. |

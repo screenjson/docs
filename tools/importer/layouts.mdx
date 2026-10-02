@@ -1,0 +1,48 @@
+---
+title: Storage layouts
+description: How a ScreenJSON document is split into database records, and how native vectors are stored.
+---
+
+`storage.layout` decides which parts of a document become separate records and which stay nested inside their parent. It changes where the data lives, not the data: reading the records back assembles the same ScreenJSON document.
+
+Every record carries a small envelope (document ID, parent, kind, ordering and revision) alongside its part of the document.
+
+## Presets
+
+| Layout | Separate records | Stays nested | Good for |
+|---|---|---|---|
+| `whole` | One record per screenplay, in `screenplays`. | Everything. | Small libraries; reading a script in one go. Vector databases refuse it unless `storage.allow_large_records: true`, since one vector per screenplay is rarely useful. |
+| `scenes` | The screenplay in `screenplays`; each scene in `scenes`; analysis in `analysis`. | A scene's elements stay in the scene; characters stay in the screenplay. | Per-scene reads, search, and embeddings. |
+| `elements` (default) | Screenplay, `scenes`, every element in `elements`, `characters`, and `analysis`. | Nothing that a level above splits out. | Querying and updating single lines; per-line or per-character vectors. |
+
+## Your own layout
+
+A layout can be a map from level to collection. `root` is required; any level you leave out stays embedded in its parent.
+
+```yaml
+storage:
+  layout:
+    root:       {collection: screenplays}
+    scenes:     {collection: script_scenes, vector: {model: text-embedding-3-small, dimensions: 1536}}
+    elements:   {collection: script_parts}
+    characters: {collection: cast}
+    analysis:   {collection: script_analysis}
+```
+
+Rules:
+
+- Splitting `elements` needs `scenes` split too, so each element has a scene record as its parent.
+- Each level needs its own collection name: a letter, then up to 62 letters, digits or underscores. Names are compared case-insensitively.
+- Only `scenes`, `elements` and `characters` can declare a `vector`, with a model name and 1 to 4096 dimensions. The database's index must support that size.
+
+## Native vectors
+
+A `vector` declaration doesn't compute embeddings. It tells the importer where to put ones the document already has.
+
+For each scene, element or character, the importer looks in `analysis.embeddings` for the first embedding made with the declared model. If its length matches the declared dimensions, the values go into the database's vector field (pgvector, Chroma, Weaviate or Pinecone), and the embedding's metadata stays in the envelope so the original document can be rebuilt exactly. Other embeddings stay in the analysis data.
+
+A record with no matching embedding is still imported. Vector databases get a zero vector marked as non-native.
+
+## Keep it consistent
+
+The layout is part of the stored format. Use the same layout for every import into a database, and the same one in [screenjson-server](/tools/server/overview) if it serves that database. The server's `screenjson-server relayout` command moves an existing library to a new layout.

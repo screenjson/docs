@@ -1,0 +1,44 @@
+---
+title: Install
+description: Run screenjson-db-importer from its container image, or build it with Go.
+---
+
+<Tabs>
+  <Tab title="Docker">
+    ```bash
+    docker pull ghcr.io/screenjson/screenjson-db-importer:latest
+    ```
+
+    Mount the files to import and the configuration:
+
+    ```bash
+    docker run --rm \
+      -v "$PWD:/data" \
+      -v "$PWD/importer.yaml:/config/importer.yaml:ro" \
+      ghcr.io/screenjson/screenjson-db-importer:latest \
+      --config /config/importer.yaml /data/converted/
+    ```
+
+    The image's working directory is `/data`, so the default manifest lands next to your files.
+  </Tab>
+  <Tab title="From source">
+    Needs Go 1.27.
+
+    ```bash
+    git clone https://github.com/screenjson/screenjson-db-importer.git
+    cd screenjson-db-importer
+    go build -o screenjson-db-importer .
+    sudo mv screenjson-db-importer /usr/local/bin/
+    ```
+
+    `make build` writes the same binary to `build/screenjson-db-importer`.
+  </Tab>
+</Tabs>
+
+## Check it
+
+```bash
+screenjson-db-importer --help
+```
+
+Next: write an `importer.yaml` ([Configuration](/tools/importer/configuration)) and [import](/tools/importer/usage).

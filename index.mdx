@@ -1,7 +1,7 @@
 ---
 title: ScreenJSON Documentation
 sidebarTitle: Introduction
-description: Reference documentation for the ScreenJSON toolchain — schema, CLI tools, viewer, and Greenlight batch microservice.
+description: Reference documentation for the ScreenJSON toolchain — schema, CLI tools, database importer, server, viewer, and Greenlight batch microservice.
 ---
 
 ScreenJSON is an open schema for screenplay data and a set of tools that produce, consume, render, and manage it.
@@ -20,8 +20,11 @@ These docs are **reference**, grounded in what each tool actually does. Every fl
   <Card title="screenjson-ui" icon="window-maximize" href="/tools/ui/overview">
     Embeddable JavaScript viewer. CDN or npm, plain HTML, React, Svelte.
   </Card>
-  <Card title="screenjson-server" icon="database" href="/tools/server/overview">
-    A shared library of screenplays. Many editors at once, live updates, REST API.
+  <Card title="screenjson-db-importer" icon="database" href="/tools/importer/overview">
+    Free, MIT-licensed CLI. Validates ScreenJSON and loads it into PostgreSQL, MongoDB, Elasticsearch or a vector database.
+  </Card>
+  <Card title="screenjson-server" icon="server" href="/tools/server/overview">
+    REST API and MCP for collaborative agent editing of screenplay libraries in NoSQL databases and S3.
   </Card>
   <Card title="Greenlight" icon="server" href="/tools/greenlight/overview">
     Batch microservice. Job queue, S3 ingestion, pipeline tasks, webhooks.
@@ -39,6 +42,9 @@ These docs are **reference**, grounded in what each tool actually does. Every fl
 <CardGroup cols={2}>
   <Card title="screenjson-cli server" icon="plug" href="/api-reference/cli/introduction">
     REST endpoints exposed by `screenjson serve`.
+  </Card>
+  <Card title="screenjson-server" icon="plug" href="/api-reference/server/introduction">
+    The library: documents, scenes, lines, checkouts, imports, jobs, search.
   </Card>
   <Card title="Greenlight service" icon="plug" href="/api-reference/greenlight/introduction">
     Job submission, results, workers, storage, tasks.

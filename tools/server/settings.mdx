@@ -1,0 +1,79 @@
+---
+title: Script settings
+description: Per-script webhooks, a Git repository of its own, a mirror in cloud storage, and automatic Greenlight exports.
+---
+
+Each script can have its own settings, edited on its page in the web app or through the API. They are kept in the database (`screenjson_settings`), not in the document, so they never appear in its ScreenJSON.
+
+```
+GET  /documents/{doc}/settings
+PUT  /documents/{doc}/settings
+GET  /documents/{doc}/automation      what the settings last did, and what is waiting
+POST /documents/{doc}/automation      {"run": "git" | "mirror" | "exports"}  run one now
+```
+
+A full example:
+
+```json
+{
+  "webhooks": [
+    {"url": "https://hooks.example.com/screenplay", "events": ["text.changed"], "secret": "s3cret"}
+  ],
+  "git": {
+    "enabled": true,
+    "remotes": [
+      {"name": "origin", "url": "https://github.com/studio/the-heist.git", "credential": "studio-github"}
+    ],
+    "branch": "main",
+    "auto_commit": true,
+    "auto_push": true,
+    "idle": "5m"
+  },
+  "mirror": {"enabled": true, "target": "s3://scripts/{doc}.json", "idle": "2m"},
+  "exports": {"enabled": true, "formats": [{"format": "pdf"}, {"format": "fdx"}], "idle": "10m"}
+}
+```
+
+## Webhooks
+
+Receivers told about this script's changes, on top of the server-wide `webhooks` in the configuration file. `events` picks from `text.changed`, `node.inserted`, `node.removed`, `node.moved`, `node.updated` and `document.deleted`; empty means all. A `secret` signs each delivery (`ScreenJSON-Signature`). Reading the settings shows only its first 5 characters; sending that masked value back keeps the stored secret.
+
+## Git
+
+The script's own repository, pushed to one or more remotes on GitHub, GitLab, Bitbucket or any Git host.
+
+| Field | Meaning |
+|---|---|
+| `remotes` | `name`, `url`, and `credential`: the name of an account in the server's `git.credentials`. |
+| `branch` | Branch to commit to. |
+| `auto_commit` | Commit once the script has been idle for `idle`. |
+| `auto_push` | Push to every remote after each commit. |
+| `include_analysis` | Include the `analysis` block in the committed file. |
+| `file` | The file's name in the repository. |
+
+Tokens never go in the database. They live in the server's YAML file, by name:
+
+```yaml
+git:
+  credentials:
+    - name: studio-github
+      provider: github        # github, gitlab, bitbucket or generic
+      username: studio-bot
+      token: ${GITHUB_TOKEN}
+```
+
+A remote whose `credential` isn't in `git.credentials` is refused when the settings are saved.
+
+Before committing, the server fetches the branch and builds on it, so commits never diverge from what is already on the remote.
+
+## Mirror
+
+Keeps the whole script, as canonical ScreenJSON, at `target` (`s3://`, `azure://` or `file://`, with `{doc}` and `{lang}` filled in), rewritten once it has been idle for `idle`.
+
+## Exports
+
+Has [Greenlight](/tools/greenlight/overview) export the script once it has been idle: each entry in `formats` is a `format` (`pdf`, `fdx`, `fadein` or `fountain`) and an optional `lang`. Needs `greenlight.servers` set.
+
+## Status
+
+`GET …/automation` shows when each of Git, mirror and exports last ran, what happened, and whether a run is waiting for the script to go idle. `POST …/automation` with `{"run": "git"}` (or `mirror`, `exports`) runs one now.

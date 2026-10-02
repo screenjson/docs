@@ -1,27 +1,38 @@
 ---
 title: Overview
-description: screenjson-server stores screenplays and lets many people and programs edit them at once, with every change streamed live.
+description: screenjson-server is a REST API and MCP platform for collaborative agent editing of screenplay libraries stored as JSON in your own NoSQL database and S3.
 ---
 
-screenjson-server is a home for a library of screenplays. It keeps each one as ScreenJSON in a database, gives every part of it its own web address, and lets any number of clients read and change those parts at the same time, safely. Every change is broadcast as it happens, so a script open in a browser updates in front of you.
+screenjson-server is a platform for editing and managing screenplays as data, at scale. It keeps a library of scripts as ScreenJSON in a database you run, puts a **REST API** and an **MCP server** in front of it, and lets any number of people, programs and AI agents work on the same scripts at once without overwriting each other.
 
-It runs as **one container**: a Go server that serves a web app for reading the library, a JSON API for everything else, and an API explorer that documents every route.
+<Info>
+screenjson-server is commercial software. [Talk to us about licensing](mailto:hello@screenjson.com?subject=screenjson-server).
+</Info>
 
 ## What it is for
 
-- **A shared library.** Import scripts from Final Draft, Fade In, Fountain or ScreenJSON, browse and search them, and read them properly formatted in the browser.
-- **Many editors at once.** Writers, tools and AI agents can edit the same script without overwriting each other. The server applies changes in order, checks each one against the ScreenJSON schema, and refuses a change based on an out-of-date copy.
-- **Work handed out in batches.** A *pass* lets many workers sweep through thousands of scenes or lines ("translate every line of dialogue", "tag every action"), each piece done exactly once.
-- **Everything out again.** PDF, Final Draft, Fade In, Fountain and ScreenJSON exports, to a download or to cloud storage; Git history for every script; webhooks and search.
+- **Collaborative agent editing.** `/mcp` gives Claude, Cursor and other MCP clients the library as tools: read outlines and scenes, search, edit, insert and move lines. Several agents can work on the same scripts at once, each under its own token, and every change is validated and conflict-checked like a human editor's. See [MCP](/tools/server/mcp).
+- **An API for every line.** Every scene, line, character, note and translation has its own URL. Read it, patch it, move it. Around 130 routes, described in the built-in explorer at `/swagger/`. See [How the API works](/tools/server/api).
+- **Mass editing.** A *pass* hands a library-wide job ("translate every line of dialogue", "tag every scene's props") out to many workers or agents in batches, each line done once, with live progress.
+- **Your NoSQL database.** Scripts live as JSON records in MongoDB, Elasticsearch, PostgreSQL (JSONB and pgvector), Chroma, Weaviate or Pinecone, split per script, per scene or per line, ready for your own queries.
+- **S3 alongside.** Each script can be mirrored as a ScreenJSON file to S3, MinIO or Azure every time it goes quiet; exports and imports go through the same buckets. See [Script settings](/tools/server/settings).
+- **Live.** Every change is an event on a websocket channel, per script, per library and per pass. The built-in web app re-renders scripts as agents edit them.
+- **In and out.** ScreenJSON, Final Draft, Fade In, Fountain and PDF in; ScreenJSON, PDF and writer formats out, through [Greenlight](/tools/greenlight/overview); a Git repository per script; webhooks. See [Import and export](/tools/server/import-export).
 
 ## How it fits with the other tools
 
 <CardGroup cols={2}>
-  <Card title="screenjson-cli" icon="terminal" href="/tools/cli/overview">
-    Converts scripts to and from ScreenJSON. The server uses it for exports, and you use it to bring scripts in.
+  <Card title="screenjson-db-importer" icon="database" href="/tools/importer/overview">
+    Free and open source. Loads a back catalogue into the same database, in the same record format, while the server is stopped.
+  </Card>
+  <Card title="Greenlight" icon="server" href="/tools/greenlight/overview">
+    Does the format work. The server hands it conversions on import and PDF, Final Draft, Fade In and Fountain exports.
   </Card>
   <Card title="screenjson-ui" icon="window-maximize" href="/tools/ui/overview">
     The script renderer. The server's web app uses it, so a script looks the same everywhere.
+  </Card>
+  <Card title="screenjson-export / screenjson-cli" icon="terminal" href="/tools/export/overview">
+    Convert scripts to ScreenJSON yourself, then POST them in.
   </Card>
 </CardGroup>
 
@@ -30,15 +41,20 @@ It runs as **one container**: a Go server that serves a web app for reading the 
 | | |
 |---|---|
 | Runs as | One container, one port (8080) |
-| Web app | `/` — the library, and each script at `/#/d/{id}` |
-| JSON API | `/documents`, `/tokens`, `/passes`, `/search`, `/status` |
+| REST API | `/documents`, `/imports`, `/jobs`, `/search`, `/tokens`, `/passes`, `/status`, `/config` |
+| MCP | `/mcp` (streamable HTTP) |
 | API explorer | `/swagger/`, and `/openapi.json` |
 | Live events | A websocket at `/connection/websocket` |
-| Databases | MongoDB, PostgreSQL, Elasticsearch, Chroma, Weaviate, or memory |
+| Databases | MongoDB, Elasticsearch, PostgreSQL (pgvector), Chroma, Weaviate, Pinecone, or memory |
+| Object storage | S3, MinIO, Azure Blob Storage, or local disk |
+| Web app | `/`: the library, imports, each script at `/#/d/{id}`, and the server's status and settings |
+| Desktop | A Tauri app for Windows, macOS and Linux that opens any server |
 
 ## Next
 
 - [Run it](/tools/server/run) in a container.
+- [MCP](/tools/server/mcp): connect an AI agent.
 - [How the API works](/tools/server/api): paths, revisions, checkouts and passes, in plain terms.
 - [Import and export](/tools/server/import-export) scripts.
+- [Script settings](/tools/server/settings): per-script S3 mirrors, Git, webhooks and automatic exports.
 - The [API reference](/api-reference/server/introduction) lists every route.

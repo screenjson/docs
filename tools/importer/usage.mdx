@@ -1,0 +1,63 @@
+---
+title: Import
+description: Flags, sources, preflight, the resume manifest, and exit codes.
+---
+
+```bash
+screenjson-db-importer [--config importer.yaml] [--set path=value]... [--workers N] [--manifest file] [--retry-failed] <source>
+```
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--config` | `$SCREENJSON_CONFIG` | The YAML configuration. See [Configuration](/tools/importer/configuration). |
+| `--workers` | `4` | Documents written in parallel, 1 to 256. |
+| `--manifest` | `screenjson-import.jsonl` | The resume manifest: one JSON line per file. |
+| `--retry-failed` | off | Import again the files whose last manifest entry is `failed`. |
+| `--set` | | Override any [setting](/tools/importer/configuration) as `path=value`, e.g. `--set storage.database=staging`. Repeatable; wins over the environment and the file. |
+
+## Sources
+
+The one argument is what to import:
+
+| Source | Imports |
+|---|---|
+| `script.json` | One file. |
+| `./converted/` | Every `.json` file under the directory, recursively. |
+| `'./converted/*.json'` | Every `.json` file the glob matches. Quote it so the shell leaves it alone. |
+| `s3://bucket/prefix/` | Every `.json` object under the prefix, using the `blob` settings. |
+| `azure://container/prefix/` | The same, in Azure Blob Storage. |
+| `file://path/` | Local files through the `fs` blob driver, under `blob.root`. |
+
+Only files ending in `.json` (any case) are taken. Each file may be up to 32 MiB.
+
+## What happens
+
+1. **Preflight.** Every source is read, parsed, and validated against the ScreenJSON schema. A file that fails is printed as `INVALID <source>: <reason>` and recorded as `failed`. Nothing is written yet.
+2. **Import.** Valid files are written by the worker pool. Each file is read again and its SHA-256 checked against preflight, so a file that changed in between is refused rather than half-imported.
+3. **Summary.** One line per file (`DONE` or `FAILED`), then a total. On big runs, preflight prints its progress every 100 files.
+
+```
+DONE converted/the-heist.json 3f64b20e-40b6-4a84-a6f2-da9ae05c11f3
+DONE converted/night-shift.json 9fea5fc5-f8f9-4c59-85d2-9ec5dcd452c1
+imported 2 document(s); manifest screenjson-import.jsonl
+```
+
+## Running it again
+
+The manifest is append-only JSONL:
+
+```json
+{"source":"converted/the-heist.json","sha256":"efcb6eb3…","document_id":"3f64b20e-…","status":"done"}
+```
+
+On the next run, a source whose last entry is `done` with the same SHA-256 is skipped (`SKIP … already imported`). A source that changed is imported again. A source that `failed` is skipped until you pass `--retry-failed`.
+
+The database is checked too. A document whose ID is already stored with the same content counts as imported. The same ID with **different** content is an error: the importer never overwrites a stored document.
+
+## Exit status
+
+`0` when every file imported or was skipped as done; `1` when any file failed, or the run couldn't start. That makes it safe in CI and cron.
+
+## One writer at a time
+
+The importer takes the same lock as screenjson-server. It refuses to start while a server is using the database (`open import environment (stop the server first)`), or while another importer is running against the same `data_dir`. Stop the server, import, then start it again.

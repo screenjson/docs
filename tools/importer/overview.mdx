@@ -1,0 +1,50 @@
+---
+title: Overview
+sidebarTitle: Overview
+description: screenjson-db-importer is a free, open-source CLI that validates ScreenJSON files and loads them into a database.
+---
+
+`screenjson-db-importer` reads ScreenJSON `.json` files and writes them to a database. It validates every document against the ScreenJSON schema first, so nothing half-valid reaches storage.
+
+<Info>
+MIT-licensed, single static binary. [Source on GitHub](https://github.com/screenjson/screenjson-db-importer).
+</Info>
+
+## Databases
+
+| `storage.driver` | Database |
+|---|---|
+| `postgres` | PostgreSQL, with pgvector for native vectors |
+| `mongo` | MongoDB, or a MongoDB-compatible server such as FerretDB |
+| `elastic` | Elasticsearch |
+| `chroma` | Chroma |
+| `weaviate` | Weaviate |
+| `pinecone` | Pinecone, using an existing dense serverless index |
+| `memory` | Nothing persisted; for trying configurations |
+
+Sources can be on local disk, in S3 or an S3-compatible store (MinIO, DigitalOcean Spaces), or in Azure Blob Storage.
+
+## What it does
+
+- Imports one file, a directory (recursively), a glob, or an `s3://`, `azure://` or `file://` URI.
+- Checks every source before writing anything: readable, valid JSON, valid ScreenJSON.
+- Splits each document into records according to a [storage layout](/tools/importer/layouts): whole, by scene, by element, or your own mapping.
+- Stores embeddings already in `analysis.embeddings` in the database's native vector field, where the layout declares one.
+- Writes in parallel (`--workers`), and records every file's result in a JSONL manifest, so a rerun skips what is done.
+
+## What it does **not** do
+
+- No conversion. It reads ScreenJSON only. Make the `.json` files with [`screenjson-export`](/tools/export/overview) (free) or [`screenjson-cli`](/tools/cli/overview).
+- No embedding. It stores vectors that are already in the document; it doesn't compute them.
+- No server. To browse, edit, and search the library afterwards, run [screenjson-server](/tools/server/overview) on the same database.
+
+## Same format as screenjson-server
+
+The importer uses the server's YAML settings and writes the server's record format, so a library loaded with the importer opens in screenjson-server as is. They take turns: the importer refuses to start while a server (or another importer) is using the database. Use the same layout settings for both.
+
+## Next
+
+- [Install](/tools/importer/install)
+- [Import](/tools/importer/usage): flags, sources, and the manifest.
+- [Configuration](/tools/importer/configuration): every setting.
+- [Storage layouts](/tools/importer/layouts): how documents become records.
